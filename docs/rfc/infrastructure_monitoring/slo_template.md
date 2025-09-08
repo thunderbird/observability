@@ -26,6 +26,7 @@
 | **Database Type** | ☐ None<br>☐ Relational<br>☐ NoSQL<br>☐ In-Memory<br>☐ Other: ________ | |
 | **Storage Type** | ☐ Block Storage<br>☐ Object Storage<br>☐ File Storage<br>☐ None<br>☐ Other: ________ | |
 | **Load Balancer** | ☐ Yes<br>☐ No | |
+| **Region*** | _____%
 
 ## Key Dependencies
 
