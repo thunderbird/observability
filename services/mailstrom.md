@@ -43,6 +43,9 @@
 # SLO Formulas for Network Protocols (Measured at Load Balancer)
 
 ## HTTPS (Port 443)
+### Endpoints
+ - https://autoconfig.thundermail.com/
+ - http://mail.thundermail.com/.well-known/jmap
 ```
 Availability SLO = (Total HTTPS requests - Failed HTTPS requests) / Total HTTPS requests * 100%
 Latency SLO = Percentage of HTTPS requests completed within 300ms ≥ 99.9%
