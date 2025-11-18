@@ -1,0 +1,7 @@
+.dev-setup/
+build/
+observability.egg-info/
+sdks/
+venv/
+*.pyc
+site24x7-location-data.json
