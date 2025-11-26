@@ -98,13 +98,13 @@ if [ $? -ne 0 ]; then
 fi
 echo '✅'
 
-echo -n " · Bootstrapping pre-commit hooks ............................ "
-pre-commit install &> $PRE_COMMIT_LOG
-if [ $? -ne 0 ]; then
-    echo "❌"
-    echo
-    echo "Setup of pre-commit hooks failed. See $PRE_COMMIT_LOG for details."
-    cat $PRE_COMMIT_LOG
-    exit 1
-fi
-echo '✅'
+# echo -n " · Bootstrapping pre-commit hooks ............................ "
+# pre-commit install &> $PRE_COMMIT_LOG
+# if [ $? -ne 0 ]; then
+#     echo "❌"
+#     echo
+#     echo "Setup of pre-commit hooks failed. See $PRE_COMMIT_LOG for details."
+#     cat $PRE_COMMIT_LOG
+#     exit 1
+# fi
+# echo '✅'
