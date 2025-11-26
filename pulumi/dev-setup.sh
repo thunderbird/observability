@@ -1,15 +1,16 @@
 #!/bin/bash
 
-#############################################################################################
-#                                                                                           #
-#    -- USAGE --                                                                            #
-#                                                                                           #
-#  ./dev-setup $PYTHON_BIN $VENV_DIR                                                        #
-#                                                                                           #
-#    · $PYTHON_BIN - Path to the Python binary to use. Defaults to your system's defaults.  #
-#    · $VENV_DIR - Path to create the virtual environment at. Defaults to ./.venv           #
-#                                                                                           #
-#############################################################################################
+###################################################################################################
+#                                                                                                 #
+#    -- USAGE --                                                                                  #
+#                                                                                                 #
+#  ./dev-setup $PYTHON_BIN $VENV_DIR                                                              #
+#                                                                                                 #
+#    · $PYTHON_BIN - Path to the Python binary to use. Defaults to your system's defaults.        #
+#    · $VENV_DIR - Path to create the virtual environment at. Defaults to ./.venv                 #
+#    · $IS_CI - Set to 1 if running in a CI environment to skip dev-dependencies and pre-commit.  #
+#                                                                                                 #
+###################################################################################################
 
 PYTHON_BIN=${1:-$(which python)}
 VENV_DIR=${2:-"./venv"}
