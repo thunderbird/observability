@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
         image: ghcr.io/${{ github.repository }}/cached-devcontainer:latest
-    # if: needs.detect-changes.outputs.iac-changed == 'true'
+    if: needs.detect-changes.outputs.iac-changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
         image: ghcr.io/${{ github.repository }}/cached-devcontainer:latest
-    # if: needs.detect-changes.outputs.iac-changed == 'true'
+    if: needs.detect-changes.outputs.iac-changed == 'true'
     strategy:
       matrix:
         stack: [prod]
