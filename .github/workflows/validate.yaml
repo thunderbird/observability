@@ -1,0 +1,71 @@
+---
+name: validate
+
+concurrency:
+  group: validate
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - "**"
+      - "!main"
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  # This job detects which parts of the repo have been changed, setting future jobs up for conditional behavior.
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      iac-changed: ${{ steps.check.outputs.iac-changed }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: check
+        with:
+          filters: |
+            pulumi:
+              - 'pulumi/**'
+
+  # When Pulumi code or configs change, run these steps
+  iac-lint:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    container:
+        image: ghcr.io/${{ github.repository }}/cached-devcontainer:latest
+    if: needs.detect-changes.outputs.iac-changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ruff check
+        run: "ruff check"
+
+      - name: Ruff format
+        run: "ruff format --check"
+
+  iac-diff:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    container:
+        image: ghcr.io/${{ github.repository }}/cached-devcontainer:latest
+    if: needs.detect-changes.outputs.iac-changed == 'true'
+    strategy:
+      matrix:
+        stack: [prod]
+    env:
+          PULUMI_ACCESS_TOKEN: "${{ secrets.PULUMI_ACCESS_TOKEN }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pulumi preview
+        run: |
+          cd pulumi && IS_CI=1 ./dev-setup.sh
+          pulumi version
+          pulumi login
+          pulumi stack select mzla-services/observability/${{ matrix.stack }}
+          pulumi preview --diff
