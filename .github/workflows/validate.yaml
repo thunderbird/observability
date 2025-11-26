@@ -64,7 +64,7 @@ jobs:
 
       - name: Pulumi preview
         run: |
-          cd pulumi && pip install -r requirements.txt
+          cd pulumi && IS_CI=1 ./dev-setup.sh
           pulumi version
           pulumi login
           pulumi stack select mzla-services/observability/${{ matrix.stack }}
