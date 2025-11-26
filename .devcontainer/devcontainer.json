@@ -15,8 +15,10 @@
 		},
 		"ghcr.io/devcontainers-extra/features/ruff:1": {
 			"version": "0.14.5"
+		},
+		"ghcr.io/devcontainers-extra/features/pre-commit:2": {
+			// "version": "2.22.0"
 		}
-		
 	},
 	"mounts": [
         // "source=/${localEnv:HOME}${localEnv:USERPROFILE}/.aws,target=/home/vscode/.aws,type=bind,consistency=cached",
