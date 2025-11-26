@@ -1,4 +1,2 @@
-pulumi>=3.207.0
 requests>=2.32.5
-pre-commit>=2.20.0
 sdks/site24x7
