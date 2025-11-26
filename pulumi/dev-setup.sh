@@ -81,6 +81,7 @@ if [ $? -ne 0 ]; then
     echo "❌"
     echo
     echo "Failed to activate the virtual environment. See $VENV_ACTIVATE_LOG for details."
+    cat $VENV_ACTIVATE_LOG
     exit 1
 fi
 echo '✅'
@@ -92,6 +93,7 @@ if [ $? -ne 0 ]; then
     echo "❌"
     echo
     echo "Installation of dependencies failed. See $VENV_PIP_LOG for details."
+    cat $VENV_PIP_LOG
     exit 1
 fi
 echo '✅'
@@ -102,6 +104,7 @@ if [ $? -ne 0 ]; then
     echo "❌"
     echo
     echo "Setup of pre-commit hooks failed. See $PRE_COMMIT_LOG for details."
+    cat $PRE_COMMIT_LOG
     exit 1
 fi
 echo '✅'
