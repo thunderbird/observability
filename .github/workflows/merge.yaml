@@ -1,0 +1,57 @@
+---
+name: merge-and-deploy-prod
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
+on:
+  push:
+    # branches:
+      # - "main"
+
+permissions:
+  contents: read
+  packages: read
+  deployments: write
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      iac-changed: ${{ steps.check.outputs.iac-changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: check
+        with:
+          filters: |
+            pulumi:
+              - 'pulumi/**'
+
+  iac-deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    container:
+        image: ghcr.io/${{ github.repository }}/cached-devcontainer:latest
+    # if: needs.detect-changes.outputs.iac-changed == 'true'
+    strategy:
+      matrix:
+        stack: [prod]
+      max-parallel: 1 # This limits the matrix jobs to run one at a time
+    env:
+          PULUMI_ACCESS_TOKEN: "${{ secrets.PULUMI_ACCESS_TOKEN }}"
+          AWS_REGION: "${{ matrix.stack }}"
+          AWS_DEFAULT_REGION: "${{ matrix.stack }}"
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Pulumi deploy
+        run: |
+          cd pulumi && ./dev-setup.sh
+          pulumi version
+          pulumi login
+          pulumi stack select mzla-services/observability/${{ matrix.stack }}
+          pulumi up --yes
