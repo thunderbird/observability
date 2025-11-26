@@ -64,7 +64,7 @@ jobs:
 
       - name: Pulumi preview
         run: |
-          cd pulumi
+          cd pulumi && ./dev-setup.sh
           pulumi version
           pulumi login
           pulumi stack select mzla-services/observability/${{ matrix.stack }}
