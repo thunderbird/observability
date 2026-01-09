@@ -6,9 +6,7 @@
 **Impacted Services:** The following services in the stage environment:
 
 - Accounts
-- Appointment
-- Mail
-- Send
+- Thundermail
 
 **Incident Began:** January 06, 2026 @ 14:32 UTC
 
@@ -19,7 +17,11 @@
 
 ## Overview
 
-At 14:32 UTC on January 06, 2026, the Stalwart instances in stage attempted to renew their ACME-provided TLS certificates. This process reported completing successfully, but the resulting certificate failed signature validation. All Stalwart services began presenting invalid certificate data. To resolve this, we disabled ACME as a TLS certificate provider altogether, opting instead for a certificate managed by AWS. This will still need to be renewed periodically, so we have configured monitors to alert when the certificate is within 30 days of expiration.
+At 14:32 UTC on January 06, 2026, the Stalwart instances in stage attempted to renew their ACME-provided TLS certificates. This process reported completing successfully, but the resulting certificate failed signature validation. All Stalwart services began presenting invalid certificate data.
+
+To resolve this, we disabled ACME as a TLS certificate provider altogether, opting instead for a certificate managed by AWS. This will still need to be renewed periodically, so we have configured monitors to alert when the certificate is within 30 days of expiration.
+
+The investigation revealed a number of interesting facts to address, some of which will require additional discussion before taking action.
 
 
 ## Quick Reference
@@ -45,7 +47,7 @@ At 14:32 UTC on January 06, 2026, the Stalwart instances in stage attempted to r
 
 - **16:15** - Thunderbird engineering staff comes online for the day and begins to take notice. Thunderbird Desktop throws errors saying that the certificate has changed when trying to sync mail. When attempting to override the old cert with the new, the new cert's validation fails. Investigation begins.
 
-- **17:35** - The problem is identified as being related to the refresh of an ACME certificate in Stalwart. We had repaired this problem in the production environment on November 7, 2026 in response to the same type of incident, but did not retrofit the stage environment to the same configuration. The solution is devised: Create a new certificate in AWS Certificate Manager. Export it and pull the cert data into Stalwart. Disable ACME altogether, using the ACM cert for all functions by default.
+- **17:35** - The problem is identified as being related to the refresh of an ACME certificate in Stalwart. We had repaired this problem in the production environment on November 7, 2025 in response to the same type of incident, but did not retrofit the stage environment to the same configuration. The solution is devised: Create a new certificate in AWS Certificate Manager. Export it and pull the cert data into Stalwart. Disable ACME altogether, using the ACM cert for all functions by default.
 
 - **18:27** - The new configuration is in place and all the stage servers are in sync. The accounts backend is now able to communicate with the Stalwart API once more, so those containers stabilize. Service is restored.
 
@@ -70,9 +72,7 @@ Jan 06 14:33:06 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 202
 Jan 06 14:33:07 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:07Z INFO ACME order valid (acme.order-valid) id = "letsencrypt", hostname = ["*.stage-thundermail.com"]
 Jan 06 14:33:08 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:08Z INFO Processing ACME certificate (acme.process-cert) id = "letsencrypt", hostname = ["*.stage-thundermail.com"], validFrom = 2026-01-06T13:34:37Z, validTo = 2026-04-06T13:34:36Z, due = 2026-03-07T13:34:36Z
 Jan 06 14:33:08 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:08Z INFO ACME order completed (acme.order-completed) domain = ["*.stage-thundermail.com"], expires = 2026-03-07T13:34:35Z
-Jan 06 14:33:27 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:27Z INFO Processing ACME certificate (acme.process-cert) id = "letsencrypt", hostname = ["*.stage-thundermail.com"], validFrom = 2026-01-06T13:34:37Z, validTo
- = 2026-04-06T13:34:36Z, due = 2026-03-07T13:34:36Z
-
+Jan 06 14:33:27 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:27Z INFO Processing ACME certificate (acme.process-cert) id = "letsencrypt", hostname = ["*.stage-thundermail.com"], validFrom = 2026-01-06T13:34:37Z, validTo = 2026-04-06T13:34:36Z, due = 2026-03-07T13:34:36Z
 ```
 
 The issue here is that the messaging reads like success, when we know that something actually failed. We have engaged the developers of Stalwart to see if this issue is familiar, but as we have little detailed info on this (and nothing popped out when searching the issues list), it is unlikely that we will receive a highly detailed explanation.
@@ -205,9 +205,9 @@ Traceback (most recent call last):
 INFO: 10.11.47.189:3488 - "GET /health HTTP/1.1" 500 Internal Server Error
 ```
 
-This is the clearest presentation of this problem in our view.
+This is the clearest presentation of this problem in our view, an exception raised from deep within the underlying `urllib3` module about an SSL certificate with a bad signature.
 
-It also raises a question: Why is the method of this call a `PATCH`? It appears this is an undocumented [endpoint](https://stalw.art/docs/api/management/endpoints/) and that we should be making a `GET` call instead. We have opened [an investigative issue](https://github.com/thunderbird/thunderbird-accounts/issues/496) to track this.
+It also raises a minor question: Why is the method of this call a `PATCH`? It appears this is an undocumented [endpoint](https://stalw.art/docs/api/management/endpoints/) and that we should be making a `GET` call instead. We have opened [an investigative issue](https://github.com/thunderbird/thunderbird-accounts/issues/496) to track this.
 
 
 
@@ -221,7 +221,7 @@ While browsing logs related to this incident, we noticed a separate issue. Even 
 
 The Accounts API contains a [partial Stalwart API client](https://github.com/thunderbird/thunderbird-accounts/blob/878f405980ae572dd9100271843f269137776bf0/src/thunderbird_accounts/mail/clients.py#L38). This allows some basic CRUD operations on [Stalwart principals](https://stalw.art/docs/auth/principals/overview/) that let us manage domains and user accounts there, and it exposes the telemetry endpoint for health check usage. Throughout this client, requests are made to the Stalwart API using the Python `requests` library with `verify=False` set. This allows for things like self-signed certs in testing/development environments.
 
-However, we should investigate the ability to turn this off. At this point, all of our environments should be using fully validated certificates, and SSL validation should always pass. We can probably remove these options, and we should, or else we should identify what other changes need to happen in order for us to remove them. I've created an issue for this [here](https://github.com/thunderbird/thunderbird-accounts/issues/494).
+However, we should investigate the ability to turn this off. At this point, all of our environments should be using fully validated certificates, and SSL validation should always pass. We can probably remove these options, and we should, or else we should identify what other changes need to happen in order for us to remove them. We've created an issue for this [here](https://github.com/thunderbird/thunderbird-accounts/issues/494).
 
 
 ### Specific relationships between accounts-related services
@@ -232,13 +232,13 @@ The Accounts API has a number of dependencies on the Stalwart API, mostly around
 
 If we wanted to prevent this, we would either need to catch this exception (and presumably other exceptions we haven't encountered yet from incidents that haven't happened yet) and do something other than throw a 500, **or** we would need to remove this call from the health check entirely. To make this call, we need to investigate the impact of a Stalwart API outage.
 
-All of our services — Stalwart, Accounts, Appointment, and Send alike — have an OIDC integration with Keycloak for token validation. Therefore, if Keycloak is offline, normal authentication will fail across the board. This makes perfect sense since Keycloak should be the actual source of truth for user identity.
+All of our services -- Stalwart, Accounts, Appointment, and Send alike -- have an OIDC integration with Keycloak for token validation. Therefore, if Keycloak is offline, normal authentication will fail across the board. This makes perfect sense since Keycloak should be the actual source of truth for user identity.
 
 Keycloak itself does not have any dependencies upon either Stalwart or Accounts. In a bootstrapping situation, it is Keycloak which must come online first in order for the other services to become stable. Since Accounts makes these calls in its health check, that means that Stalwart must be next to come online, and that Accounts itself must come online last. If we remove the health check dependency on Stalwart, this would remove this hard service dependency.
 
 Keycloak shows no signs of malfunction during the incident, though, which also makes sense given this dependency model. Its request rate is extremely consistent, the target group reports no 500-class errors at all, and the Keycloak service logs report absolutely nothing interesting.
 
-There is no reason to think that this Accounts outage impacted other Pro Services. In that light, we may consider that a Stalwart API outage *does* constitute or justify a full Accounts outage.
+There is no reason to think that this Accounts outage impacted other Pro Services. In that light, we may decide that a Stalwart API outage *does* constitute or justify a full Accounts outage.
 
 We will continue to discuss this topic in [this issue created for that purpose](https://github.com/thunderbird/thunderbird-accounts/issues/495).
 
