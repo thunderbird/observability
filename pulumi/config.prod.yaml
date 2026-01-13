@@ -1,0 +1,7 @@
+---
+
+config:
+  build_site24x7: True
+  build_tbpulumi: False
+
+resources: {}

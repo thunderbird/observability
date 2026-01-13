@@ -1,0 +1,25 @@
+---
+
+config:
+  build_site24x7: False
+  build_tbpulumi: True
+
+resources:
+  tb:network:MultiCidrVpc:
+    fluentbit:
+      # This project has all of 10.200.0.0/16 assigned to it, but let's not soak all those up
+      # This gets us 10.200.0.0 -> 10.200.3.255
+      cidr_block: 10.200.0.0/22
+      subnets:
+        eu-central-1a:
+          - 10.200.0.0/23  # 10.200.0.0 -> 10.200.1.255
+        eu-central-1b:
+          - 10.200.0.128/25  # 10.200.2.0 -> 10.200.3.255
+      # Allow traffic out via an IGW so we can talk to Posthog and other services
+      enable_internet_gateway: True
+      egress_via_internet_gateway: True
+      # Required for load balancing Fargate containers
+      enable_dns_hostnames: True
+      endpoint_interfaces:
+        - logs
+        - secretsmanager
