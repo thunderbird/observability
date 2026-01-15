@@ -1,13 +1,15 @@
-FROM fluent/fluent-bit:4.2.2-debug
-# FROM fluent/fluent-bit:4.2.2
+ARG IMAGE_SUFFIX=""
 
-WORKDIR /fluent-bit
-
-# Delete the default config entirely and set up our custom directories
-RUN rm -rf etc
+FROM alpine:latest AS base
 
 # Install our custom files
-COPY filesystem/ /
+COPY filesystem/etc/fluent-bit /etc/fluent-bit
+COPY filesystem/fluent-bit/ /fluent-bit
+
+FROM fluent/fluent-bit:4.2.2${IMAGE_SUFFIX:-}
+
+COPY --from=base /fluent-bit /fluent-bit
+COPY --from=base /etc/fluent-bit /etc/fluent-bit
 
 ENTRYPOINT [ "/fluent-bit/bin/fluent-bit" ]
-CMD [ "-c", "/fluent-bit/etc/fluent-bit.yaml" ]
+CMD [ "-c", "/etc/fluent-bit/fluent-bit.yaml" ]
