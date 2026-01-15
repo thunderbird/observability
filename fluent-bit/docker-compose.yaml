@@ -1,0 +1,26 @@
+---
+services:
+  fluent-bit:
+    build:
+      dockerfile: Dockerfile
+    env_file: .env
+    ports:
+      - 1337:1337
+    volumes:
+      - ./outputs:/fluent-bit/outputs/
+
+  fluent-bit-debug:
+    build:
+      dockerfile: Dockerfile
+      args:
+        IMAGE_SUFFIX: "-debug"
+    # entrypoint: /bin/bash
+    env_file: .env
+    profiles:
+      - debug
+    ports:
+      - 1337:1337
+    # stdin_open: true
+    # tty: true
+    volumes:
+      - ./outputs:/fluent-bit/outputs/
