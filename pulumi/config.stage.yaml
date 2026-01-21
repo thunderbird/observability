@@ -5,6 +5,11 @@ config:
   build_tbpulumi: True
 
 resources:
+  tb:secrets:PulumiSecretsManager:
+    secrets:
+      secret_names:
+        - posthog_api_key
+
   tb:network:MultiCidrVpc:
     fluentbit:
       # This project has all of 10.200.0.0/16 assigned to it, but let's not soak all those up
@@ -26,18 +31,55 @@ resources:
 
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
-      assign_public_ip: yes
-      desired_count: 2
-      ecr_resources:
-        - 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:*
-      internal: yes
+      cluster: {}
+      log_key: {}
+      secrets: {}
       services:
+        fluentbit: {}
+      task_definitions:
         fluentbit:
-          availability_zone_rebalancing: ENABLED
-          load_balancers:
-            fluentbit:
-              internal: yes
-              load_balancer_type: application
-          targets:  # Need to define
-            - port: 1337
-              protocol: HTTP
+          container_definitions:
+            # ref: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-size
+            - name: fluent-bit
+              environment:
+                - name: ENV
+                  value: dev
+                - name: FLUENTBIT_LOG_LEVEL
+                  value: info
+                - name: FLUENTBIT_VERSION
+                  value: 4.2.2
+              # secrets:
+              #   - name: POSTHOG_API_KEY
+              #     valueFrom: $arn_goes_here
+              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:rjung
+              logConfiguration:
+                logDriver: awslogs
+                options:
+                  awslogs-group: observability-stage-loggroup-fluentbit
+              portMappings:
+                - containerPort: 1337
+                  protocol: tcp
+              restartPolicy:
+                enabled: yes
+                restartAttemptPeriod: 300
+          cpu: 512
+          family: fluentbit
+          memory: 1024
+          network_mode: awsvpc
+          requires_compatibilities:
+            - FARGATE
+
+
+
+
+      # load_balancers: {}
+      # targets:
+      # autoscalers:
+      # services:
+      #   fluentbit:
+      #     assign_public_ip: yes
+      #     availability_zone_rebalancing: ENABLED
+      #     desired_count: 2
+      #     ecr_resources:
+      #       - 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:*
+      #     internal: yes

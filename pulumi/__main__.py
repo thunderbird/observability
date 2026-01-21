@@ -12,6 +12,7 @@ of any of those larger infrastructure patterns.
 import tb_pulumi
 import tb_pulumi.fargate
 import tb_pulumi.network
+import tb_pulumi.secrets
 
 from site24x7 import main as site24x7
 
@@ -28,6 +29,13 @@ if build_site24x7:
     site24x7()
 
 if build_tbpulumi:
+    psm_opts = resources.get('tb:secrets:PulumiSecretsManager', {}).get('secrets')
+    psm = tb_pulumi.secrets.PulumiSecretsManager(
+        name='observability-secrets',
+        project=project,
+        **psm_opts,
+    )
+
     vpc_config = resources.get('tb:network:MultiCidrVpc', {}).get('fluentbit', {})
     vpc_fluentbit = tb_pulumi.network.MultiCidrVpc(
         f'{project.name_prefix}-vpc-fluentbit',
