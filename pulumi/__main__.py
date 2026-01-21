@@ -10,6 +10,7 @@ of any of those larger infrastructure patterns.
 """
 
 import tb_pulumi
+import tb_pulumi.fargate
 import tb_pulumi.network
 
 from site24x7 import main as site24x7
@@ -27,11 +28,21 @@ if build_site24x7:
     site24x7()
 
 if build_tbpulumi:
-    vpcs = {
-        vpc_name: tb_pulumi.network.MultiCidrVpc(
-            f'{project.name_prefix}-vpc-{vpc_name}',
+    vpc_config = resources.get('tb:network:MultiCidrVpc', {}).get('fluentbit', {})
+    vpc_fluentbit = tb_pulumi.network.MultiCidrVpc(
+        f'{project.name_prefix}-vpc-fluentbit',
+        project=project,
+        **vpc_config,
+    )
+
+    ecs_clusters = {
+        cluster_name: tb_pulumi.fargate.AutoscalingFargateCluster(
+            f'{project.name_prefix}-fargate-{cluster_name}',
             project=project,
-            **vpc_config,
+            subnets=vpc_fluentbit.resources.get('subnets', []),
+            **cluster_config,
         )
-        for vpc_name, vpc_config in resources.get('tb:network:MultiCidrVpc', {}).items()
+        for cluster_name, cluster_config in resources.get(
+            'tb:fargate:AutoscalingFargateCluster'
+        ).items()
     }
