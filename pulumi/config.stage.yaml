@@ -17,9 +17,9 @@ resources:
       cidr_block: 10.200.0.0/22
       subnets:
         eu-central-1a:
-          - 10.200.0.0/23  # 10.200.0.0 -> 10.200.1.255
+          - 10.200.0.0/23  # 10.200.0.0 - 10.200.1.255
         eu-central-1b:
-          - 10.200.0.128/25  # 10.200.2.0 -> 10.200.3.255
+          - 10.200.2.0/23  # 10.200.2.0 - 10.200.3.255
       # Allow traffic out via an IGW so we can talk to Posthog and other services
       enable_internet_gateway: True
       egress_via_internet_gateway: True
@@ -28,19 +28,36 @@ resources:
       endpoint_interfaces:
         - logs
         - secretsmanager
-
+  
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
       cluster: {}
-      log_key: {}
-      secrets: {}
-      services:
-        fluentbit: {}
+      container_security_groups:
+        fluentbit:
+          fluentbit-http:
+            rules:
+              ingress:
+                - description: Allow traffic from the load balancer to the container
+                  # Sources are set in code
+                  protocol: tcp
+                  from_port: 1337
+                  to_port: 1337
+              egress:
+                - description: Allow traffic from the container out to the Internet
+                  protocol: tcp
+                  from_port: 0
+                  to_port: 65535
+                  cidr_blocks:
+                    - 0.0.0.0/0
+
+      secrets:
+        fluentbit:
+          - arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key*
       task_definitions:
         fluentbit:
           container_definitions:
             # ref: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-size
-            - name: fluent-bit
+            - name: fluentbit
               environment:
                 - name: ENV
                   value: dev
@@ -48,14 +65,16 @@ resources:
                   value: info
                 - name: FLUENTBIT_VERSION
                   value: 4.2.2
-              # secrets:
-              #   - name: POSTHOG_API_KEY
-              #     valueFrom: $arn_goes_here
+              secrets:
+                - name: POSTHOG_API_KEY
+                  valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-EnMa1n
               image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:rjung
               logConfiguration:
                 logDriver: awslogs
                 options:
-                  awslogs-group: observability-stage-loggroup-fluentbit
+                  awslogs-group: observability-stage-fargate-fluentbit-loggroup-fluentbit
+                  awslogs-region: eu-central-1
+                  awslogs-stream-prefix: observability/stage/fluentbit/
               portMappings:
                 - containerPort: 1337
                   protocol: tcp
@@ -68,18 +87,64 @@ resources:
           network_mode: awsvpc
           requires_compatibilities:
             - FARGATE
-
-
-
-
-      # load_balancers: {}
-      # targets:
-      # autoscalers:
-      # services:
-      #   fluentbit:
-      #     assign_public_ip: yes
-      #     availability_zone_rebalancing: ENABLED
-      #     desired_count: 2
-      #     ecr_resources:
-      #       - 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:*
-      #     internal: yes
+      load_balancer_security_groups:
+        fluentbit-http:
+          description: Governs access to the fluent-bit-http load balancer in stage
+          rules:
+            ingress:
+              - from_port: 443
+                to_port: 443
+                protocol: tcp
+                cidr_blocks:
+                  - 10.1.0.0/16  # stalwart-stage
+                description: Allow access from stalwart-stage
+            egress:
+              - from_port: 0
+                to_port: 65535
+                protocol: all
+                cidr_blocks:
+                  - 0.0.0.0/0
+      load_balancers:
+        fluentbit-http:
+          enable_cross_zone_load_balancing: yes
+          internal: yes
+          ip_address_type: ipv4
+          load_balancer_type: application
+          name: fluentbit-http-stage
+          preserve_host_header: yes
+      targets:
+        fluentbit-http:
+          stalwart-metrics:
+            name: stage-telemetry-http
+            health_check:
+              protocol: HTTP
+              path: /health/check
+              port: 1337
+              # I wish it wasn't like this. fluentbit will not accept non-POST methods, but these health checks cannot be
+              # made with custom methods. Therefore, we expect a 400 Bad Request as a sign of health. *shrug*
+              matcher: "400"
+            port: 1337
+            protocol: HTTP
+            # Next two options are required for ECS services; ref:
+            # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/alb.html
+            target_type: ip
+            ip_address_type: ipv4
+      listeners:
+        fluentbit-http:
+          stalwart-metrics:
+            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/2efa3c64-691e-4d9f-aed5-096325ac19cf  # fluentbit-stage.tb.pro
+            port: 443
+            protocol: HTTPS
+      services:
+        fluentbit:
+          assign_public_ip: yes
+          container_name: fluentbit
+          container_port: 1337
+          load_balancer: fluentbit-http
+          service:
+            desired_count: 2
+          target: stalwart-metrics
+      autoscalers:
+        fluentbit:
+          min_capacity: 2
+          max_capacity: 4

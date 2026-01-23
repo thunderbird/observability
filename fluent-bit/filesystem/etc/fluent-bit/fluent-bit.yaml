@@ -43,6 +43,10 @@ pipeline:
       call: stalwart_telemetry_callback
 
   outputs:
+    # Throw away health checks
+    - name: null
+      match: health_check
+
     # Log untagged records so we can respond to them
     - name: file
       match: untagged
