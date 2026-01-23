@@ -2,7 +2,7 @@
 
 [Fluentd](https://www.fluentd.org/) is an open source program that recieves data from any number of sources through a variety of ingestion mechanisms, then processes that data and emits it back out to other destinations. This is commonly used to collect and ship observability data like metrics and logs.
 
-[Fluent-bit](https://fluentbit.io/) was originally designed to solve the same problems as fluentd, but on a microcontroller's scale. It is incredibly fast and lightweight, even more so than fluentd, which is itself very fast and lightweight. This comes at some cost, primarily that you cannot use the Ruby language to manipulate data. Since this is no great loss, we opt for the flyweight option.
+[Fluent-bit](https://fluentbit.io/) was originally designed to solve the same problems as fluentd, but on a microcontroller's scale. It is incredibly fast and lightweight, even more so than fluentd, which is itself very fast and lightweight. This comes at some cost, primarily that you cannot use the Ruby language to manipulate data. Since this is no great loss, we opt for the flyweight prospect.
 
 The contents of this directory contain all the elements we need to build and locally test fluent-bit for our environments. For live environment installations, see the [`pulumi`](../pulumi/) directory.
 
@@ -19,7 +19,7 @@ fluent-bit is commonly used for metrics and log aggregation. If you need to ship
 
 ## Usage
 
-fluent-bit provides two Docker images for each version they release. One, intended for actual deployments, is security-hardened and contains no shell or useful administrative tools. The other is a debug image which you can inspect directly. We customize both Docker images by embedding our custom configurations into them and wrapping them in a handy docker-compose configuration.
+fluent-bit provides two Docker images for each version they release. One, intended for actual deployments, is security-hardened and contains no shell or useful administrative tools. The other is a debug image which you can inspect directly. We customize both Docker images by embedding our custom configurations into them and wrapping them in a handy docker-compose setup.
 
 
 ### Dotenv File
