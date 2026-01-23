@@ -1,1 +1,3 @@
-config: {'observability:posthog_api_key': {secure: AAABADNVbsoTmx0hogPjFb+Egd5TX7Wheactt3JgEv21j1G+OJSjHF+CUpY/w9qTS3KEw4IdoYUuufBKX2sJXudMUYFAEc8m8o2rg56eGw==}}
+config: 
+  observability:posthog_api_key:
+    secure: AAABADNVbsoTmx0hogPjFb+Egd5TX7Wheactt3JgEv21j1G+OJSjHF+CUpY/w9qTS3KEw4IdoYUuufBKX2sJXudMUYFAEc8m8o2rg56eGw==
