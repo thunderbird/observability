@@ -55,10 +55,10 @@ resources:
       secrets:
         fluentbit:
           - arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key*
+
       task_definitions:
         fluentbit:
           container_definitions:
-            # ref: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-size
             - name: fluentbit
               environment:
                 - name: ENV
@@ -89,6 +89,7 @@ resources:
           network_mode: awsvpc
           requires_compatibilities:
             - FARGATE
+
       load_balancer_security_groups:
         fluentbit-http:
           description: Governs access to the fluent-bit-http load balancer in stage
@@ -106,6 +107,7 @@ resources:
                 protocol: all
                 cidr_blocks:
                   - 0.0.0.0/0
+
       load_balancers:
         fluentbit-http:
           enable_cross_zone_load_balancing: yes
@@ -114,6 +116,7 @@ resources:
           load_balancer_type: application
           name: fluentbit-http-stage
           preserve_host_header: yes
+
       targets:
         stalwart-metrics:
           name: stage-telemetry-http
@@ -131,12 +134,15 @@ resources:
           # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/alb.html
           target_type: ip
           ip_address_type: ipv4
+
       listeners:
         fluentbit-http:
           stalwart-metrics:
-            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/2efa3c64-691e-4d9f-aed5-096325ac19cf  # fluentbit-stage.tb.pro
+            # This cert is for fluentbit-stage.tb.pro
+            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/2efa3c64-691e-4d9f-aed5-096325ac19cf
             port: 443
             protocol: HTTPS
+
       services:
         fluentbit:
           assign_public_ip: yes
@@ -146,6 +152,7 @@ resources:
           service:
             desired_count: 2
           target: stalwart-metrics
+
       autoscalers:
         fluentbit:
           min_capacity: 2
