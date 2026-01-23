@@ -1,14 +1,5 @@
 ---
 
-# We can set an environment here, but if we are in ECS
-# I think we should handle the environment there. - rjung
-# env:
-#   ENVIRONMENT: stage
-
-# includes:
-  # - parsers.yaml
-  # - plugins.yaml
-
 service:
   flush: 1
   grace: 5
@@ -21,17 +12,12 @@ service:
   storage.keep.rejected: on
   storage.rejected.path: /fluent-bit/dlq
 
-# parsers: {}
-
-# multiline_parsers: {}
-
 pipeline:
   inputs:
     - name: http
       tag: untagged
       port: 1337
       threaded: true
-      # tls: https://docs.fluentbit.io/manual/administration/transport-security
 
   filters:
     # Run a Lua script that breaks all events in a single Stalwart telemetry payload into multiple
