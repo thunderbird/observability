@@ -62,7 +62,7 @@ resources:
             - name: fluentbit
               environment:
                 - name: ENV
-                  value: dev
+                  value: stage
                 - name: FLUENTBIT_LOG_LEVEL
                   value: info
                 - name: FLUENTBIT_VERSION
