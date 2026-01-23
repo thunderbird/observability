@@ -12,8 +12,8 @@ resources:
 
   tb:network:MultiCidrVpc:
     fluentbit:
-      # This project has all of 10.200.0.0/16 assigned to it, but let's not soak all those up
-      # This gets us 10.200.0.0 -> 10.200.3.255
+      # The observability project has all of 10.200.0.0/16 assigned to it, but let's not soak all
+      # those up just serving fluent-bit. This CIDR gets us 10.200.0.0 -> 10.200.3.255.
       cidr_block: 10.200.0.0/22
       subnets:
         eu-central-1a:
