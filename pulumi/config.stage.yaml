@@ -34,6 +34,8 @@ resources:
   
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
+      cluster: {}
+
       container_security_groups:
         fluentbit:
           fluentbit-http:
@@ -55,6 +57,8 @@ resources:
       secrets:
         fluentbit:
           - arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key*
+      
+      ssm_params: {}
 
       task_definitions:
         fluentbit:
