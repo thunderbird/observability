@@ -27,10 +27,10 @@ pipeline:
       match: telemetry_stalwart
       script: /etc/fluent-bit/lua/stalwart_telemetry_events.lua
       call: stalwart_telemetry_callback
-
+    
   outputs:
     # Throw away health checks
-    - name: null
+    - name: stdout
       match: health_check
 
     # Log untagged records so we can respond to them

@@ -8,19 +8,20 @@ services:
       - 1337:1337
     volumes:
       - ./outputs:/fluent-bit/outputs/
+    develop:
+      watch:
+        - action: rebuild
+          path: ./filesystem
 
   fluent-bit-debug:
     build:
       dockerfile: Dockerfile
       args:
         IMAGE_SUFFIX: "-debug"
-    # entrypoint: /bin/bash
     env_file: .env
-    profiles:
-      - debug
     ports:
       - 1337:1337
-    # stdin_open: true
-    # tty: true
+    profiles:
+      - debug
     volumes:
       - ./outputs:/fluent-bit/outputs/

@@ -20,6 +20,8 @@ This script requires the presence of the following environment variables:
 
 ]]--
 
+local md5 = require('sha2').md5
+
 
 --[[  Main callback function that fluent-bit will call.  ]]--
 function stalwart_telemetry_callback(tag, timestamp, record)
@@ -91,16 +93,25 @@ end
 
 --[[  Sanitize delivery.delivered events  ]]--
 function sanitize_delivery_delivered_event(event)
-    event.to = nil
     event.details = nil
+    event.from = md5(event.from)
+    event.queueId = nil
+    event.queueName = nil
+    event.spanId = nil
+    event.to = md5(event.to)
     return event
 end
 
 --[[  Add common fields to events  ]]--
 function normalize_event(sanitized_event)
+    -- distinct_id is used by Posthog to refer to a unique user. Today we use "from" but we would
+    -- like this to be the Stalwart account ID (or a hash of it)
+    sanitized_event.event.distinct_id = sanitized_event.event.from
+    
+    -- These are our internally recognized common fields
     os_env = os.getenv('ENV') or 'dev'
-    sanitized_event.event.service = 'thundermail'
     sanitized_event.event.environment = os_env
+    sanitized_event.event.service = 'thundermail'
     return sanitized_event
 end
 
@@ -121,7 +132,6 @@ function format_events_as_posthog_batch(sanitized_events)
             event = 'thundermail.' .. event.event_type,
             properties = event.event,
         }
-        batch[idx].properties.distinct_id = event.event_id
     end
     payload.batch = batch
 

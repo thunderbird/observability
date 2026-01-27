@@ -6,8 +6,11 @@ ARG IMAGE_SUFFIX=""
 FROM alpine:latest AS base
 
 # Install our custom files
-COPY filesystem/etc/fluent-bit /etc/fluent-bit
-COPY filesystem/fluent-bit/ /fluent-bit
+COPY filesystem/ /
+
+# Install a hash library from latest tested commit ID, do not pull from master
+ADD https://raw.githubusercontent.com/Egor-Skriptunoff/pure_lua_SHA/6adac177c16c3496899f69d220dfb20bc31c03df/sha2.lua \
+    /etc/fluent-bit/lua/
 
 
 # In a separate build stage, copy our files out of the base build into the fluent-bit build
@@ -15,6 +18,9 @@ FROM fluent/fluent-bit:4.2.2${IMAGE_SUFFIX:-}
 
 COPY --from=base /fluent-bit /fluent-bit
 COPY --from=base /etc/fluent-bit /etc/fluent-bit
+
+# Make sure Lua knows where to find our code
+ENV LUA_PATH="/etc/fluent-bit/lua/?.lua;;"
 
 # Set a custom command that refers to our config
 ENTRYPOINT [ "/fluent-bit/bin/fluent-bit" ]
