@@ -30,7 +30,7 @@ pipeline:
     
   outputs:
     # Throw away health checks
-    - name: stdout
+    - name: null
       match: health_check
 
     # Log untagged records so we can respond to them
