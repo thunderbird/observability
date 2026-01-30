@@ -1,4 +1,4 @@
 .env
 outputs/
-payload.json
+payload.json*
 

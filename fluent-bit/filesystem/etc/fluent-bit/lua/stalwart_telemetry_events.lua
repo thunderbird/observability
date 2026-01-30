@@ -26,97 +26,69 @@ local md5 = require('sha2').md5
 --[[  Main callback function that fluent-bit will call.  ]]--
 function stalwart_telemetry_callback(tag, timestamp, record)
     -- Sanitize all events in the record
-    sanitized_events = {}
-    for idx, event in ipairs(record.events)
-    do
-        sanitized_events[idx] = sanitize_event(event)
+    events = {}
+    for idx, event in ipairs(record.events) do
+        events[idx] = sanitize_event(event)
     end
 
     -- Normalize all events in the record
-    for idx, event in ipairs(sanitized_events)
-    do
-        sanitized_events[idx] = normalize_event(event)
+    for idx, event in ipairs(events) do
+        events[idx] = normalize_event(event)
     end
 
     -- Reformat the events as a Posthog batch API payload
-    record = format_events_as_posthog_batch(sanitized_events)
+    record = format_events_as_posthog_batch(events)
 
     return 2, timestamp, record
 end
 
---[[  Removes unwanted content from events. Returns a table with keys `event_id` (a unique
-      identifier for the event), `event_type` (its classifier), and `event` (the actual record
-      with some content removed).  ]]--
-function sanitize_event(event)
-    -- Extract the ID and type from the event
-    event_id = event.id
-    event_type = event.type
 
-    -- If there's no type, then we don't know how to deal with it. We just return it.
-    if (not event_type)
-    then
-        print('Stalwart telemetry record contains no event type. Returning the record unmodified.')
-        return {
-            event_id = event_id,
-            event_type = nil,
-            event = event
-        }
+function value_in_array(haystack, needle)
+    for _, item in pairs(haystack) do
+        if (item == needle) then
+            return true
+        end
     end
-
-    -- There's an event type? We might know how to process it.
-    sanitized_event = nil
-    
-    -- delivery.delivered emits when an email is successfully delivered to an inbox.
-    if (event_type == 'delivery.delivered')
-    then
-        sanitized_event = sanitize_delivery_delivered_event(event.data)
-    end
-
-    -- If we don't recognize the event type, log a message so we can review later.
-    if (not sanitized_event)
-    then
-        print('Unknown Stalwart telemetry event type:', event_type, '. Returning the record unmodified.')
-        return {
-            event_id = event_id,
-            event_type = event_type,
-            event = event
-        }
-    else
-        -- Ideally, we get here and return a sanitized event.
-        return {
-            event_id = event_id,
-            event_type = event_type,
-            event = sanitized_event,
-        }
-    end
+    return false
 end
 
---[[  Sanitize delivery.delivered events  ]]--
-function sanitize_delivery_delivered_event(event)
-    event.details = nil
-    event.from = md5(event.from)
-    event.queueId = nil
-    event.queueName = nil
-    event.spanId = nil
-    event.to = md5(event.to)
+--[[  Removes unwanted content from an event. Returns the event as presented, with some keys
+      removed or hashed for obscurity. ]] --
+function sanitize_event(event)
+    -- Data keys to sanitize. Ref: https://stalw.art/docs/telemetry/events#key-types
+    delete_keys = {'contents'} -- Keys to fully delete
+    hash_keys = {'from', 'to'} -- Keys to replace with an md5 hash
+    -- domain? hostname?
+
+    for key, value in next,event.data do
+        if value_in_array(delete_keys, key) then
+            -- Delete any keys we want totally gone
+            event.data[value] = nil
+        elseif value_in_array(hash_keys, key) then
+            -- Replace certain other values with hashes
+            event.data[key] = md5(event.data[key])
+        end
+    end
+
     return event
 end
 
 --[[  Add common fields to events  ]]--
-function normalize_event(sanitized_event)
+function normalize_event(event)
     -- distinct_id is used by Posthog to refer to a unique user. Today we use "from" but we would
     -- like this to be the Stalwart account ID (or a hash of it)
-    sanitized_event.event.distinct_id = sanitized_event.event.from
+    event.data.distinct_id = event.data.from
     
     -- These are our internally recognized common fields
     os_env = os.getenv('ENV') or 'dev'
-    sanitized_event.event.environment = os_env
-    sanitized_event.event.service = 'thundermail'
-    return sanitized_event
+    event.data.environment = os_env
+    event.data.service = 'thundermail'
+    event.data.stalwart_event_id = event.id
+    return event
 end
 
 --[[  Convert sanitized Stalwart telemetry events into a format the Posthog API can read.  ]]--
-function format_events_as_posthog_batch(sanitized_events)
+function format_events_as_posthog_batch(events)
     -- This will be the new record format
     payload = {
         api_key = os.getenv('POSTHOG_API_KEY'),
@@ -125,12 +97,11 @@ function format_events_as_posthog_batch(sanitized_events)
     
     -- Convert "event" entries into "batch" entries
     batch = {}
-    for idx, event in ipairs(sanitized_events)
-    do
+    for idx, event in ipairs(events) do
         batch[idx] = {
             -- Prefix the event types from Stalwart with the "thundermail" term
-            event = 'thundermail.' .. event.event_type,
-            properties = event.event,
+            event = 'thundermail.' .. event.type,
+            properties = event.data,
         }
     end
     payload.batch = batch
