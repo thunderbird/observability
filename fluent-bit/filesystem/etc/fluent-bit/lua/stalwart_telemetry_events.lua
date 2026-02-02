@@ -13,15 +13,48 @@ Documentation on how this script and fluent-bit interact can be found here:
 
     https://docs.fluentbit.io/manual/data-pipeline/filters/lua
 
-This script requires the presence of the following environment variables:
+This script desires the presence of the following environment variables:
 
   - POSTHOG_API_KEY (required)
   - ENV (optional, defaults to "dev")
+  - FLUENTBIT_STALWART_DELETE_KEYS (Optional; Comma-separated keys in the Stalwart event to delete during sanitization)
+  - FLUENTBIT_STALWART_HASH_KEYS (Optional, Comma-separated keys in the Stalwart event to replace with md5 hashes)
+
+The last two options refer to key types found in these docs:
+
+    https://stalw.art/docs/telemetry/events#key-types
 
 ]]--
 
 local md5 = require('sha2').md5
 
+-- [[ Returns an environment variable or a default value if it's not set ]]
+function getenv_or_default(env_var, default)
+    var = os.getenv(env_var)
+    if (var == nil) then
+        return default
+    end
+    return var
+end
+
+-- [[ Splits a single string into a table of its substrings separated by commas ]]
+function split_str(str)
+    tab = {}
+    for s in string.gmatch(str, '[^,]+') do
+        table.insert(tab, s)
+    end
+    return tab
+end
+
+-- [[ Returns true if the needle value is found in the haystack array ]]
+function value_in_array(haystack, needle)
+    for _, item in pairs(haystack) do
+        if (item == needle) then
+            return true
+        end
+    end
+    return false
+end
 
 --[[  Main callback function that fluent-bit will call.  ]]--
 function stalwart_telemetry_callback(tag, timestamp, record)
@@ -42,23 +75,12 @@ function stalwart_telemetry_callback(tag, timestamp, record)
     return 2, timestamp, record
 end
 
-
-function value_in_array(haystack, needle)
-    for _, item in pairs(haystack) do
-        if (item == needle) then
-            return true
-        end
-    end
-    return false
-end
-
 --[[  Removes unwanted content from an event. Returns the event as presented, with some keys
       removed or hashed for obscurity. ]] --
 function sanitize_event(event)
-    -- Data keys to sanitize. Ref: https://stalw.art/docs/telemetry/events#key-types
-    delete_keys = {'contents'} -- Keys to fully delete
-    hash_keys = {'from', 'to'} -- Keys to replace with an md5 hash
-    -- domain? hostname?
+    -- Get delete and hash keys from the environment
+    local delete_keys = split_str(getenv_or_default('FLUENTBIT_STALWART_DELETE_KEYS'))
+    local hash_keys = split_str(getenv_or_default('FLUENTBIT_STALWART_HASH_KEYS'))
 
     for key, value in next,event.data do
         if value_in_array(delete_keys, key) then

@@ -71,6 +71,10 @@ resources:
                   value: info
                 - name: FLUENTBIT_VERSION
                   value: 4.2.2
+                - name: FLUENTBIT_STALWART_DELETE_KEYS
+                  value: contents
+                - name: FLUENTBIT_STALWART_HASH_KEYS
+                  value: from,to
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-EnMa1n
