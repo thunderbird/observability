@@ -12,14 +12,14 @@ resources:
 
   tb:network:MultiCidrVpc:
     fluentbit:
-      # The observability project has all of 10.200.0.0/16 assigned to it, but let's not soak all
-      # those up just serving fluent-bit. This CIDR gets us 10.200.0.0 -> 10.200.3.255.
-      cidr_block: 10.200.0.0/22
+      # The observability project has all of 10.201.0.0/16 assigned to it, but let's not soak all
+      # those up just serving fluent-bit. This CIDR gets us 10.201.0.0 -> 10.201.3.255.
+      cidr_block: 10.201.0.0/22
       subnets:
         eu-central-1a:
-          - 10.200.0.0/23  # 10.200.0.0 - 10.200.1.255
+          - 10.201.0.0/23  # 10.201.0.0 - 10.201.1.255
         eu-central-1b:
-          - 10.200.2.0/23  # 10.200.2.0 - 10.200.3.255
+          - 10.201.2.0/23  # 10.201.2.0 - 10.201.3.255
       # Allow traffic out via an IGW so we can talk to Posthog and other services
       enable_internet_gateway: True
       egress_via_internet_gateway: True
@@ -30,7 +30,7 @@ resources:
         - secretsmanager
       additional_routes:
         - destination_cidr_block: 10.1.0.0/16  # mailstrom-stage
-          vpc_peering_connection_id: pcx-0eaad64bcba492657
+          vpc_peering_connection_id: pcx-03dd1daa0b700ab37
   
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
@@ -77,8 +77,8 @@ resources:
                   value: from,to
               secrets:
                 - name: POSTHOG_API_KEY
-                  valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-EnMa1n
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:rjung001
+                  valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-Dpnlm6
+              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:aa968a499d7e
               logConfiguration:
                 logDriver: awslogs
                 options:
