@@ -29,9 +29,9 @@ resources:
       endpoint_interfaces:
         - logs
         - secretsmanager
-      # additional_routes:
-      #   - destination_cidr_block: 10.0.0.0/16  # mailstrom-prod
-      #     vpc_peering_connection_id: 
+      additional_routes:
+        - destination_cidr_block: 10.0.0.0/16  # mailstrom-prod
+          vpc_peering_connection_id: pcx-0d581e66566a6e00b
   
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
@@ -67,7 +67,7 @@ resources:
             - name: fluentbit
               environment:
                 - name: ENV
-                  value: stage
+                  value: prod
                 - name: FLUENTBIT_LOG_LEVEL
                   value: info
                 - name: FLUENTBIT_VERSION
@@ -76,16 +76,16 @@ resources:
                   value: contents
                 - name: FLUENTBIT_STALWART_HASH_KEYS
                   value: from,to
-              # secrets:
-              #   - name: POSTHOG_API_KEY
-              #     valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-Dpnlm6
+              secrets:
+                - name: POSTHOG_API_KEY
+                  valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/prod/posthog_api_key-pVtqmp
               image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:aa968a499d7e
               logConfiguration:
                 logDriver: awslogs
                 options:
-                  awslogs-group: observability-stage-fargate-fluentbit-loggroup-fluentbit
+                  awslogs-group: observability-prod-fargate-fluentbit-loggroup-fluentbit
                   awslogs-region: eu-central-1
-                  awslogs-stream-prefix: observability/stage/fluentbit/
+                  awslogs-stream-prefix: observability/prod/fluentbit/
               portMappings:
                 - containerPort: 1337
                   protocol: tcp
@@ -123,7 +123,7 @@ resources:
           internal: yes
           ip_address_type: ipv4
           load_balancer_type: application
-          name: fluentbit-http-stage
+          name: fluentbit-http-prod
           preserve_host_header: yes
 
       targets:
@@ -147,8 +147,8 @@ resources:
       listeners:
         fluentbit-http:
           stalwart-metrics:
-            # This cert is for fluentbit-stage.tb.pro
-            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/2efa3c64-691e-4d9f-aed5-096325ac19cf
+            # This cert is for fluentbit-prod.tb.pro
+            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/2b53c661-d98b-4f3c-a2ad-1c3be042d439
             port: 443
             protocol: HTTPS
 
