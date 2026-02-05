@@ -7,12 +7,194 @@ config:
   site24x7:oauth2RefreshToken:
     secure: AAABAHHawF75rvpJMEakuJrdZ4Uosc4Px11TMfBPcV0lrxEoH+s2QLdy+ViMrs+Lgj3wHdQDv08eWgsYaNsZ2T8nNaiPC55KdopQ6pwHZccn95XNhtyEYG+t3CsLRsdhhW1IXjoS
   site24x7:dataCenter: US
-
-  # When true, updates site24x7-location-data.json from their API
-  refresh_site24x7_location_data: false
-
-  # User accounts in Site24x7
-  users:
+  observability:location_profiles:
+    global_spread:
+      outer_regions_location_consent: true
+      primary_location: "10"
+      profile_name: Global Spread (P)
+      restrict_alternate_location_polling: true
+      secondary_locations:
+        - "27"
+        - "40"
+        - "113"
+        - "18"
+        - "21"
+        - "47"
+  observability:monitor_groups:
+    accounts:
+      description: Monitors related to auth and identity
+      display_name: TB Pro Accounts (P)
+      user_groups:
+        - tbpro-prod-oncall
+    appointment:
+      description: Monitors related to the Appointment app
+      display_name: TB Pro Appointment (P)
+      user_groups:
+        - tbpro-prod-oncall
+    send:
+      description: Monitors related to the Send app
+      display_name: TB Pro Send (P)
+      user_groups:
+        - tbpro-prod-oncall
+    thundermail:
+      description: Monitors related to mail, contacts, and calendaring
+      display_name: TB Pro Thundermail (P)
+      user_groups:
+        - tbpro-prod-oncall
+  observability:monitors:
+    prod-accounts-backend-website:
+      check_frequency: 5
+      display_name: '[Prod] Accounts Backend (P)'
+      http_method: G
+      kind: website
+      location_profile: global_spread
+      matching_keyword_value: accounts
+      monitor_groups:
+        - accounts
+      notification_profile: high-severity
+      timeout: 5
+      user_groups:
+        - tbpro-prod-oncall
+      website: https://accounts.tb.pro/health
+    prod-accounts-frontend-website:
+      check_frequency: 5
+      display_name: '[Prod] Accounts Frontend (P)'
+      follow_http_redirection: false
+      http_method: G
+      kind: website
+      location_profile: global_spread
+      monitor_groups:
+        - accounts
+      notification_profile: high-severity
+      response_headers:
+        location: /login/
+      timeout: 5
+      up_status_codes: "302"
+      user_groups:
+        - tbpro-prod-oncall
+      website: https://accounts.tb.pro/
+    prod-auth-website:
+      check_frequency: 5
+      display_name: '[Prod] Auth Frontend (P)'
+      follow_http_redirection: false
+      http_method: G
+      kind: website
+      location_profile: global_spread
+      matching_keyword_value: If you are not automatically redirected to Thunderbird Accounts
+      monitor_groups:
+        - accounts
+      notification_profile: high-severity
+      timeout: 5
+      up_status_codes: "200"
+      user_groups:
+        - tbpro-prod-oncall
+      website: https://auth.tb.pro/
+    prod-stalwart-imap:
+      display_name: '[Prod] Stalwart IMAP (P)'
+      host_name: mail.thundermail.com
+      invert_port_check: false
+      kind: port
+      location_profile: global_spread
+      monitor_groups:
+        - thundermail
+      notification_profile: high-severity
+      port: 143
+      timeout: 5
+      use_ssl: false
+      user_groups:
+        - tbpro-prod-oncall
+    stage-accounts-backend-website:
+      check_frequency: 5
+      display_name: '[Stage] Accounts Backend (P)'
+      http_method: G
+      kind: website
+      location_profile: global_spread
+      matching_keyword_value: accounts
+      monitor_groups:
+        - accounts
+      notification_profile: low-severity
+      timeout: 5
+      user_groups:
+        - tbpro-stage
+      website: https://accounts-stage.tb.pro/health
+    stage-accounts-frontend-website:
+      check_frequency: 5
+      display_name: '[Stage] Accounts Frontend (P)'
+      follow_http_redirection: false
+      http_method: G
+      kind: website
+      location_profile: global_spread
+      monitor_groups:
+        - accounts
+      notification_profile: low-severity
+      response_headers:
+        location: /login/
+      timeout: 5
+      up_status_codes: "302"
+      user_groups:
+        - tbpro-stage
+      website: https://accounts-stage.tb.pro/
+    stage-auth-website:
+      check_frequency: 5
+      display_name: '[Stage] Auth Frontend (P)'
+      follow_http_redirection: false
+      http_method: G
+      kind: website
+      location_profile: global_spread
+      matching_keyword_value: If you are not automatically redirected to Thunderbird Accounts
+      monitor_groups:
+        - accounts
+      notification_profile: low-severity
+      timeout: 5
+      up_status_codes: "200"
+      user_groups:
+        - tbpro-stage
+      website: https://auth-stage.tb.pro/
+    stage-stalwart-imap:
+      display_name: '[Stage] Stalwart IMAP (P)'
+      host_name: mail.stage-thundermail.com
+      invert_port_check: false
+      kind: port
+      location_profile: global_spread
+      monitor_groups:
+        - thundermail
+      notification_profile: low-severity
+      port: 143
+      timeout: 5
+      use_ssl: false
+      user_groups:
+        - tbpro-stage
+  observability:notification_profiles:
+    high-severity:
+      alert_configurations:
+        - notification_media:
+            - "1"
+            - "2"
+            - "3"
+            - "6"
+          status: -1
+      profile_name: High Severity (P)
+      rca_needed: true
+    low-severity:
+      alert_configurations:
+        - notification_media:
+            - "1"
+          status: -1
+      profile_name: Low Severity (P)
+      rca_needed: false
+  observability:posthog_api_key:
+    secure: AAABAOfbfrRy0AQBvl5C9MX9YUcawqnXNwKwgZ97k6NN1mjrBJoIlgpP1HXEoCb5Sa+jV9zj+jDr5MDEg4LI35R4+ZCJkQqE4uyCMm958A==
+  observability:refresh_site24x7_location_data: "false"
+  observability:user_groups:
+    tbpro-prod-oncall:
+      display_name: TB Pro Production On Call (P)
+      users:
+        - rjung
+    tbpro-stage:
+      display_name: TB Pro Stage Engineers (P)
+      users:
+        - rjung
+  observability:users:
     rjung:
       display_name: Ryan Jung (P)
       email_address: rjung@thunderbird.net
@@ -20,227 +202,20 @@ config:
       statusiq_role: super_admin
       user_role: super_admin
 
-  # The IDs in this section correspond to cities in Site24x7's location_template API and are at
-  # least theoretically subject to change. Enable the `refresh_site24x7_location_data` option and
-  # run `pulumi preview` to generate the latest version of that data dumped into
-  # `site24x7-location-data.json`.
-  location_profiles:
-    global_spread:
-      profile_name: "Global Spread (P)"
-      primary_location: "10" # Frankfurt
-      secondary_locations:
-        - "27"  # Denver
-        - "40"  # Toronto
-        - "113" # Mexico City
-        - "18"  # Paris
-        - "21"  # Hong Kong
-        - "47"  # Beijing
-      # Restrict polling so that it is **only** sourced from the above locations
-      restrict_alternate_location_polling: true
-      # Allow polling from... let's say "politically contentious" regions
-      outer_regions_location_consent: true
-  
-  notification_profiles:
-    low-severity:
-      profile_name: "Low Severity (P)"
-      rca_needed: false
-      alert_configurations:
-        - status: -1  # any status
-          notification_media:
-            - "1"  # email
-    high-severity:
-      profile_name: "High Severity (P)"
-      rca_needed: true
-      alert_configurations:
-        - status: -1  # any status
-          notification_media:
-            - "1"  # email
-            - "2"  # sms
-            - "3"  # voice
-            - "6"  # mobile push
-
-  user_groups:
-    tbpro-stage:
-      display_name: TB Pro Stage Engineers (P)
-      users:
-        - rjung
-    tbpro-prod-oncall:
-      display_name: TB Pro Production On Call (P)
-      users:
-        - rjung
-
-  monitor_groups:
-    accounts:
-      display_name: TB Pro Accounts (P)
-      description: Monitors related to auth and identity
-      user_groups:
-        - tbpro-prod-oncall
-    appointment:
-      display_name: TB Pro Appointment (P)
-      description: Monitors related to the Appointment app
-      user_groups:
-        - tbpro-prod-oncall
-    send:
-      display_name: TB Pro Send (P)
-      description: Monitors related to the Send app
-      user_groups:
-        - tbpro-prod-oncall
-    thundermail:
-      display_name: TB Pro Thundermail (P)
-      description: Monitors related to mail, contacts, and calendaring
-      user_groups:
-        - tbpro-prod-oncall
-
-  monitors:
-    
-    # Accounts - Stage
-    stage-accounts-backend-website:
-      kind: website
-      display_name: "[Stage] Accounts Backend (P)"
-      website: https://accounts-stage.tb.pro/health
-      check_frequency: 5
-      timeout: 5
-      location_profile: global_spread
-      matching_keyword_value: accounts
-      http_method: G  # This means "GET"
-      monitor_groups:
-        - accounts
-      user_groups:
-        - tbpro-stage
-      notification_profile: low-severity
-
-    stage-accounts-frontend-website:
-      kind: website
-      display_name: "[Stage] Accounts Frontend (P)"
-      website: https://accounts-stage.tb.pro/
-      follow_http_redirection: false
-      check_frequency: 5
-      timeout: 5
-      location_profile: global_spread
-      http_method: G  # This means "GET"
-      up_status_codes: "302"
-      response_headers:
-        location: "/login/"
-      monitor_groups:
-        - accounts
-      user_groups:
-        - tbpro-stage
-      notification_profile: low-severity
-
-    stage-auth-website:
-      kind: website
-      display_name: "[Stage] Auth Frontend (P)"
-      website: https://auth-stage.tb.pro/
-      follow_http_redirection: false
-      check_frequency: 5
-      timeout: 5
-      location_profile: global_spread
-      http_method: G  # This means "GET"
-      up_status_codes: "200"
-      matching_keyword_value: "If you are not automatically redirected to Thunderbird Accounts"
-      monitor_groups:
-        - accounts
-      user_groups:
-        - tbpro-stage
-      notification_profile: low-severity
-
-    # Accounts - Prod
-    prod-accounts-backend-website:
-      kind: website
-      display_name: "[Prod] Accounts Backend (P)"
-      website: https://accounts.tb.pro/health
-      check_frequency: 5
-      timeout: 5
-      location_profile: global_spread
-      matching_keyword_value: accounts
-      http_method: G  # This means "GET"
-      monitor_groups:
-        - accounts
-      user_groups:
-        - tbpro-prod-oncall
-      notification_profile: high-severity
-
-    prod-accounts-frontend-website:
-      kind: website
-      display_name: "[Prod] Accounts Frontend (P)"
-      website: https://accounts.tb.pro/
-      follow_http_redirection: false
-      check_frequency: 5
-      timeout: 5
-      location_profile: global_spread
-      http_method: G  # This means "GET"
-      up_status_codes: "302"
-      response_headers:
-        location: "/login/"
-      monitor_groups:
-        - accounts
-      user_groups:
-        - tbpro-prod-oncall
-      notification_profile: high-severity
-
-    prod-auth-website:
-      kind: website
-      display_name: "[Prod] Auth Frontend (P)"
-      website: https://auth.tb.pro/
-      follow_http_redirection: false
-      check_frequency: 5
-      timeout: 5
-      location_profile: global_spread
-      http_method: G  # This means "GET"
-      up_status_codes: "200"
-      matching_keyword_value: "If you are not automatically redirected to Thunderbird Accounts"
-      monitor_groups:
-        - accounts
-      user_groups:
-        - tbpro-prod-oncall
-      notification_profile: high-severity
-
-    # Thundermail - Stage
-    stage-stalwart-imap:
-      kind: port
-      display_name: "[Stage] Stalwart IMAP (P)"
-      host_name: mail.stage-thundermail.com
-      port: 143
-      use_ssl: false
-      timeout: 5
-      location_profile: global_spread
-      invert_port_check: false
-      monitor_groups:
-        - thundermail
-      user_groups:
-        - tbpro-stage
-      notification_profile: low-severity
-
-    # Thundermail - Prod
-    prod-stalwart-imap:
-      kind: port
-      display_name: "[Prod] Stalwart IMAP (P)"
-      host_name: mail.thundermail.com
-      port: 143
-      use_ssl: false
-      timeout: 5
-      location_profile: global_spread
-      invert_port_check: false
-      monitor_groups:
-        - thundermail
-      user_groups:
-        - tbpro-prod-oncall
-      notification_profile: high-severity
-
-    # The "api" kind seems to have some bugs in the Terraform provider, but this is what such a
-    # configuration should look like:
-    #
-    # prod-accounts-backend-api:
-    #   kind: api
-    #   display_name: "[Prod] Accounts Backend API (P)"
-    #   website: https://accounts.tb.pro/health
-    #   check_frequency: 5
-    #   timeout: 5
-    #   location_profile: global_spread
-    #   http_method: G  # TThis means "GET"
-    #   response_content_type: J  # This indicates a JSON response
-    #   match_json_paths: []
-    #     - "$[?(@.keycloak && @.stalwart && @.redis && @.database && @.accounts)]"
-    #   match_json_path_severity: 0
-    #   monitor_groups:
-    #     - accounts
+# The "api" kind seems to have some bugs in the Terraform provider, but this is what such a
+# configuration should look like:
+#
+# prod-accounts-backend-api:
+#   kind: api
+#   display_name: "[Prod] Accounts Backend API (P)"
+#   website: https://accounts.tb.pro/health
+#   check_frequency: 5
+#   timeout: 5
+#   location_profile: global_spread
+#   http_method: G  # TThis means "GET"
+#   response_content_type: J  # This indicates a JSON response
+#   match_json_paths: []
+#     - "$[?(@.keycloak && @.stalwart && @.redis && @.database && @.accounts)]"
+#   match_json_path_severity: 0
+#   monitor_groups:
+#     - accounts
