@@ -60,7 +60,7 @@ The investigation revealed a number of interesting facts to address, some of whi
 
 The following is a snippet of logs taken from the `mailstrom-stalwart-stage-50` instance, which is the admin instance for the stage deployment.
 
-```
+<pre>
 Jan 06 14:32:45 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:32:45Z INFO ACME order started (acme.order-start) hostname = ["*.stage-thundermail.com"]
 Jan 06 14:32:48 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:32:48Z INFO ACME authentication started (acme.auth-start) hostname = "stage-thundermail.com", type = "dns-01", id = "letsencrypt"
 Jan 06 14:32:58 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:32:58Z INFO ACME authentication started (acme.auth-start) hostname = "stage-thundermail.com", type = "dns-01", id = "letsencrypt"
@@ -73,7 +73,7 @@ Jan 06 14:33:07 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 202
 Jan 06 14:33:08 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:08Z INFO Processing ACME certificate (acme.process-cert) id = "letsencrypt", hostname = ["*.stage-thundermail.com"], validFrom = 2026-01-06T13:34:37Z, validTo = 2026-04-06T13:34:36Z, due = 2026-03-07T13:34:36Z
 Jan 06 14:33:08 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:08Z INFO ACME order completed (acme.order-completed) domain = ["*.stage-thundermail.com"], expires = 2026-03-07T13:34:35Z
 Jan 06 14:33:27 ip-10-1-100-101.eu-central-1.compute.internal docker[11756]: 2026-01-06T14:33:27Z INFO Processing ACME certificate (acme.process-cert) id = "letsencrypt", hostname = ["*.stage-thundermail.com"], validFrom = 2026-01-06T13:34:37Z, validTo = 2026-04-06T13:34:36Z, due = 2026-03-07T13:34:36Z
-```
+</pre>
 
 The issue here is that the messaging reads like success, when we know that something actually failed. We have engaged the developers of Stalwart to see if this issue is familiar, but as we have little detailed info on this (and nothing popped out when searching the issues list), it is unlikely that we will receive a highly detailed explanation.
 
@@ -84,7 +84,7 @@ This occured on an older version of the server at a time when we need to upgrade
 
 Beginning at 14:33, we can see actual cert validation errors appear associated with failed health checks against Accounts API. This health check makes calls to various backend services (the database, cache, etc.) to validate that they're online. There isn't any special logic here, just a [call to `get_telemetry()`](https://github.com/thunderbird/thunderbird-accounts/blob/878f405980ae572dd9100271843f269137776bf0/src/thunderbird_accounts/infra/views.py#L43-L51) that ultimately makes a [`PATCH` call to Stalwart's `/telemetry/metrics`](https://github.com/thunderbird/thunderbird-accounts/blob/878f405980ae572dd9100271843f269137776bf0/src/thunderbird_accounts/mail/clients.py#L188) Suddenly, we see errors like this:
 
-```
+<pre>
 [DEBUG] 2026-01-06 14:33:34,347: Starting new HTTPS connection (1): auth-stage.tb.pro:443
 requests.exceptions.SSLError: HTTPSConnectionPool(host='mailstrom-stage-management-i.stage-thundermail.com', port=8080): Max retries exceeded with url: /api/telemetry/metrics (Caused by SSLError(SSLError(1, '[SSL: BAD_SIGNATURE] bad signature (_ssl.c:1032)')))
 raise SSLError(e, request=request)
@@ -203,7 +203,7 @@ File "/app/.venv/lib/python3.13/site-packages/urllib3/connectionpool.py", line 4
 Traceback (most recent call last):
 [ERROR] 2026-01-06 14:33:34,395: Internal Server Error: /health
 INFO: 10.11.47.189:3488 - "GET /health HTTP/1.1" 500 Internal Server Error
-```
+</pre>
 
 This is the clearest presentation of this problem in our view, an exception raised from deep within the underlying `urllib3` module about an SSL certificate with a bad signature.
 
@@ -215,9 +215,9 @@ It also raises a minor question: Why is the method of this call a `PATCH`? It ap
 
 While browsing logs related to this incident, we noticed a separate issue. Even under normal operation, we see this type of message in the Accounts API logs repeatedly:
 
-```
+<pre>
 /app/.venv/lib/python3.13/site-packages/urllib3/connectionpool.py:1097: InsecureRequestWarning: Unverified HTTPS request is being made to host 'mailstrom-stage-management-i.stage-thundermail.com'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#tls-warnings
-```
+</pre>
 
 The Accounts API contains a [partial Stalwart API client](https://github.com/thunderbird/thunderbird-accounts/blob/878f405980ae572dd9100271843f269137776bf0/src/thunderbird_accounts/mail/clients.py#L38). This allows some basic CRUD operations on [Stalwart principals](https://stalw.art/docs/auth/principals/overview/) that let us manage domains and user accounts there, and it exposes the telemetry endpoint for health check usage. Throughout this client, requests are made to the Stalwart API using the Python `requests` library with `verify=False` set. This allows for things like self-signed certs in testing/development environments.
 
