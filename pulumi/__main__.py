@@ -31,7 +31,7 @@ if build_site24x7:
 if build_tbpulumi:
     psm_opts = resources.get('tb:secrets:PulumiSecretsManager', {}).get('secrets')
     psm = tb_pulumi.secrets.PulumiSecretsManager(
-        name='observability-secrets',
+        name=f'{project.name_prefix}-secrets',
         project=project,
         **psm_opts,
     )
