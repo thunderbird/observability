@@ -18,6 +18,10 @@ pipeline:
       tag: untagged
       port: 1337
       threaded: true
+    - name: forward
+      tag: untagged
+      port: 24224  # default value
+      shared_key: ${FLUENTBIT_LOG_FORWARD_SHARED_KEY}
 
   filters:
     # Run a Lua script that breaks all events in a single Stalwart telemetry payload into multiple
@@ -48,3 +52,10 @@ pipeline:
       tls: on
       uri: /batch
       format: json_lines
+
+    # Send forwarded stalwart logs to a local file as a test
+    - name: file
+      match: stalwart_logs
+      path: /fluent-bit/outputs
+      file: stalwart.log
+      format: plain

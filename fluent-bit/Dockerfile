@@ -6,7 +6,7 @@ ARG IMAGE_SUFFIX=""
 FROM alpine:latest AS base
 
 # Install our custom files
-COPY filesystem/ /
+COPY Dockerfile.filesystem/ /
 
 # Install a hash library from latest tested commit ID, do not pull from master
 ADD https://raw.githubusercontent.com/Egor-Skriptunoff/pure_lua_SHA/6adac177c16c3496899f69d220dfb20bc31c03df/sha2.lua \

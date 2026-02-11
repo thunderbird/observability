@@ -5,7 +5,8 @@ services:
       dockerfile: Dockerfile
     env_file: .env
     ports:
-      - 1337:1337
+      - 1337:1337  # HTTP listener for Stalwart telemetry
+      - 24224:24224  # Log aggregation
     volumes:
       - ./outputs:/fluent-bit/outputs/
     develop:
@@ -21,7 +22,20 @@ services:
     env_file: .env
     ports:
       - 1337:1337
+      - 24224:24224
     profiles:
       - debug
     volumes:
       - ./outputs:/fluent-bit/outputs/
+  
+  stalwart:
+    image: stalwartlabs/stalwart:v0.15.4
+    depends_on:
+      fluent-bit:
+        condition: service_started
+    ports:
+      - 443:443
+    volumes:
+      - ./stalwart:/opt/stalwart
+    profiles:
+      - fulltest
