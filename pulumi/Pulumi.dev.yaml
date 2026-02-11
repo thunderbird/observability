@@ -1,0 +1,3 @@
+config:
+  observability:posthog_api_key:
+    secure: AAABAACLeD5lasJAmY66NyJXtacSmTSMj/PiXtmBNIHeBfLx2HA3mhTzyWkPZnD9j8MCYPbtnjJiWeZBzOROWVKEcKpuysV/FV5CDoHCJg==
