@@ -78,7 +78,7 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/dev/posthog_api_key-e3UEK4
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:aa968a499d7e
+              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:7b9c3eed77ed
               logConfiguration:
                 logDriver: awslogs
                 options:
