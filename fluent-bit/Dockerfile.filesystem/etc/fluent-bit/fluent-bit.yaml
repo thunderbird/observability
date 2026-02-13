@@ -19,9 +19,8 @@ pipeline:
       port: 1337
       threaded: true
     - name: forward
-      tag: untagged
       port: 24224  # default value
-      # shared_key: ${FLUENTBIT_LOG_FORWARD_SHARED_KEY}
+      shared_key: ${FLUENTBIT_LOG_FORWARD_SHARED_KEY}
 
   filters:
     # Run a Lua script that breaks all events in a single Stalwart telemetry payload into multiple
