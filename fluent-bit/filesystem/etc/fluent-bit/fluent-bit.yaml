@@ -6,7 +6,7 @@ service:
   daemon: no
   dns.mode: UDP
   hot_reload: on
-  log_level: trace
+  log_level: info
   storage.path: /fluent-bit/buffers
   storage.backlog.flush_on_shutdown: on
   storage.keep.rejected: on
