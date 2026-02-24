@@ -78,7 +78,7 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-3xsHYd
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:aa968a499d7e
+              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:fdd1b4748cfaee29553ee2c83fcaa428b68ba8e88c2791e1626e282b48127b9d
               logConfiguration:
                 logDriver: awslogs
                 options:
@@ -87,6 +87,7 @@ resources:
                   awslogs-stream-prefix: observability/stage/fluentbit/
               portMappings:
                 - containerPort: 1337
+                  hostPort: 1337
                   protocol: tcp
               restartPolicy:
                 enabled: yes

@@ -33,12 +33,9 @@ pipeline:
     - name: null
       match: health_check
 
-    # Log untagged records so we can respond to them
-    - name: file
+    # Log untagged records to stdout (since we don't have disk access on ECS) so we can respond to them
+    - name: stdout
       match: untagged
-      path: /fluent-bit/outputs
-      file: untagged.log
-      format: out_file
 
     # Send Stalwart telemetry to Posthog
     - name: http

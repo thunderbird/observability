@@ -87,7 +87,10 @@ function sanitize_event(event)
             -- Delete any keys we want totally gone
             event.data[value] = nil
         elseif value_in_array(hash_keys, key) then
-            -- Replace certain other values with hashes
+            -- Replace certain other values with hashes, ensuring they're strings first
+            if (type(event.data[key]) ~= 'string') then
+                event.data[key] = tostring(event.data[key])
+            end
             event.data[key] = md5(event.data[key])
         end
     end
@@ -99,7 +102,7 @@ end
 function normalize_event(event)
     -- distinct_id is used by Posthog to refer to a unique user. Today we use "from" but we would
     -- like this to be the Stalwart account ID (or a hash of it)
-    event.data.distinct_id = event.data.from
+    event.data.distinct_id = event.data.from or 'n/a'
     
     -- These are our internally recognized common fields
     os_env = os.getenv('ENV') or 'dev'
