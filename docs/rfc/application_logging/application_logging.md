@@ -12,15 +12,15 @@ We should produce and store logs for the following purposes:
 - Development and debugging
 - Incident response
 
-We should **not** produce or store logs for purposes such as:
+We should **not** produce or store logs for other purposes such as:
 
 - Data collection
 - Analytics
-- Any kind of user tracking purpose
+- Any kind of user tracking
 
 Generally, if the logs contain information that can identify a user, we should be very scrutinous about whether those
 logs actually need to be produced. Logs should serve a purpose, and PII in logs needs to be fully justified. Staging and
-other pre-prod environments should not contain PII in the first place.
+other pre-prod environments should not contain PII.
 
 
 ## Log Storage and Access
