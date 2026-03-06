@@ -29,7 +29,7 @@ Most application logging facilities include a "log level" feature where log mess
 associated with an appropriate verbosity level in the software's logging tool. For most purposes, we should only log
 sensitive data at the "debug" level (or a more verbose level like "trace"), and only if it is absolutely necessary.
 
-Production environments should always use the default log level (typically "info") to further suppress this output.
+Production environments should always use the default log level (typically "info") to suppress this output.
 Staging and development environments should never contain any real user PII, and therefore more verbose logging should
 not pose a hazard. Where possible, debug logging of this sort should also be removed prior to deploying code to
 production.
@@ -42,12 +42,12 @@ service of some kind (CloudWatch, Splunk, Kibana, etc), or a developer's local m
 environments, there should be no sensitive data present, but when we do produce PII in logs, we need to protect it.
 
 When logs are stored on a disk, that disk should be encrypted. This includes originating servers and aggregation targets
-as well as engineer working machines. *Encryption must be enabled at rest on all systems where logs potentially
-containing PII will persist.* Where possible, those encryption keys should be automatically rotated on a recurring
+as well as engineer working machines. Encryption must be enabled at rest on all systems where logs potentially
+containing PII will persist. Where possible, those encryption keys should be automatically rotated on a recurring
 basis.
 
-When logs are stored on another host, or they pass through an intermediary (such as fluentd or fluentbit), *the data
-must be encrypted at all stages of transit using TLS or equivalent protection.* Log aggregation systems should be
+When logs are stored on another host, or they pass through an intermediary (such as fluentd/fluent-bit), the data
+must be encrypted at all stages of transit using TLS or equivalent protection. Log aggregation systems should be
 configured to limit access. This can be done by placing the system on a private network and controlling access to that
 service. A password-based system where services sending logs must authenticate to do so is also recommended.
 
@@ -77,10 +77,11 @@ some good guidelines include:
 
 ### Data Retention
 
-We do not need to store logs for a long period of time. Incident response should be able to grab the necessary logs
-during the initial response period or during the post-mortem investigation in the days following. Developers
-investigating service issues in lower environments should be able to reproduce their test scenario to generate new log
-text. The longer we retain our logs, the longer that information is at risk, the greater our burden of protection.
+We do not need to store logs for a long period of time. Incident response should be able to grab (and sanitize) the
+necessary logs during the initial response period or during the post-mortem investigation in the days following.
+Developers investigating service issues in lower environments should be able to reproduce their test scenario to
+generate new log text. The longer we retain our logs, the longer that information is at risk, the greater our burden of
+protection.
 
 Service logs should be retained no longer than 3 days in production environments and no longer than 7 days in other
 environments. Logs exceeding these ages should be fully destroyed, not moved to another location or storage tier, nor
@@ -89,17 +90,17 @@ or similar mechanism, not left to an engineer to tidy up manually.
 
 Logs should not be exfiltrated from these systems under most circumstances. In the rare occasion when it is necessary to
 offload logs, such as when preparing a postmortem incident report, that data should be scrubbed of private information
-where possible and destroyed as soon as feasible.
+where possible and any data that remains un-anonymized should be destroyed as soon as feasible.
 
 
 ## Auditing
 
 Ideally, we want as much of these processes to be auditable. That means that we should be able to look at our systems
-and answer questions about the data such as:
+and answer specific questions about the data such as:
 
-- When did the data get created? How old is it?
-- Who has accessed a piece of data?
-- Has a user taken any other actions with the data?
+- When did the data get created? How old is it? Does it exist outside of our data retention policy?
+- Who has accessed this data?
+- Has a particular user taken any other actions with the data?
 
 To accomplish this, attention should be paid when designing logging systems to maximize our ability to do this. This may
 include:
@@ -113,3 +114,10 @@ include:
   use.
 - Use automated tools like AWS GuardDuty and AWS Config to report on unsecure configurations.
 - Use automated tools like AWS CloudTrail and CloudWatch Alarms to alert when sensitive data is accessed.
+
+
+## Implementations
+
+We currently have no implementations of these guidelines.
+
+- An [implementation for CloudWatch Logs](./logging_to_cloudwatch_logs.md) has been proposed.
