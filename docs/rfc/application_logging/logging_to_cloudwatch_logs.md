@@ -43,8 +43,8 @@ It should define the following resources:
   environment. In implementation, keeping with AWS's log group naming conventions, this might be called something like
   `/tb/mailstrom/stage` for the Mailstrom/Stalwart staging environment.
 - A [CloudWatch LogStream](https://www.pulumi.com/registry/packages/aws/api-docs/cloudwatch/logstream/) for each
-  application. This is somewhat arbitrary and can be broken up however it makes sense. (i.e.
-  `/tb/mailstrom/stage/stalwart/mail` vs `/tb/mailstrom/stage/stalwart/management-api`)
+  application. This is somewhat arbitrary and can be broken up however it makes sense. (i.e.  `stalwart/mail` vs
+  `stalwart/management-api`)
 - A set of [IAM Policies](https://www.pulumi.com/registry/packages/aws/api-docs/iam/policy/) allowing various levels of
   access to these streams. Applications will need a write access policy. Users will need read access policies. There
   should be a level of customization here, allowing the engineers to design access in ways that make sense for their
