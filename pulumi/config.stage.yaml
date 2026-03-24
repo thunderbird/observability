@@ -10,6 +10,10 @@ resources:
       secret_names:
         - posthog_api_key
 
+  tb:s3:S3Bucket:
+    cloudtrail:
+      bucket_name: tb-observability-cloudtrail-target-stage
+
   tb:network:MultiCidrVpc:
     fluentbit:
       # The observability project has all of 10.201.0.0/16 assigned to it, but let's not soak all
