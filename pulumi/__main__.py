@@ -10,8 +10,10 @@ of any of those larger infrastructure patterns.
 """
 
 import tb_pulumi
+import tb_pulumi.cloudwatch
 import tb_pulumi.fargate
 import tb_pulumi.network
+import tb_pulumi.s3
 import tb_pulumi.secrets
 
 from site24x7 import main as site24x7
@@ -29,6 +31,7 @@ if build_site24x7:
     site24x7()
 
 if build_tbpulumi:
+    # Resources that don't require a VPC or subnets
     psm_opts = resources.get('tb:secrets:PulumiSecretsManager', {}).get('secrets')
     psm = tb_pulumi.secrets.PulumiSecretsManager(
         name=f'{project.name_prefix}-secrets',
@@ -36,6 +39,27 @@ if build_tbpulumi:
         **psm_opts,
     )
 
+    logdest_opts = resources.get('tb:cloudwatch:LogDestination', {})
+    log_destinations = {
+        logdest_name: tb_pulumi.cloudwatch.LogDestination(
+            f'{project.name_prefix}-logdest-{logdest_name}',
+            project=project,
+            **logdest_config,
+        )
+        for logdest_name, logdest_config in logdest_opts.items()
+    }
+
+    s3_bucket_opts = resources.get('tb:s3:S3Bucket', {})
+    s3_buckets = {
+        bucket_name: tb_pulumi.s3.S3Bucket(
+            name=f'{project.name_prefix}-s3bucket-{bucket_name}',
+            project=project,
+            **bucket_config,
+        )
+        for bucket_name, bucket_config in s3_bucket_opts.items()
+    }
+
+    # The VPC and everything that depends upon it
     vpc_config = resources.get('tb:network:MultiCidrVpc', {}).get('fluentbit', {})
     vpc_fluentbit = tb_pulumi.network.MultiCidrVpc(
         f'{project.name_prefix}-vpc-fluentbit',
