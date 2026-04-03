@@ -10,6 +10,10 @@ resources:
       secret_names:
         - posthog_api_key
   
+  tb:cloudwatch:LogDestination:
+    rjung-test:
+      org_name: tb
+  
   tb:s3:S3Bucket:
     cloudtrail:
       bucket_name: tb-observability-cloudtrail-target-dev

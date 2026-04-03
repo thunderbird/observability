@@ -10,6 +10,7 @@ of any of those larger infrastructure patterns.
 """
 
 import tb_pulumi
+import tb_pulumi.cloudwatch
 import tb_pulumi.fargate
 import tb_pulumi.network
 import tb_pulumi.s3
@@ -37,6 +38,16 @@ if build_tbpulumi:
         project=project,
         **psm_opts,
     )
+
+    logdest_opts = resources.get('tb:cloudwatch:LogDestination', {})
+    log_destinations = {
+        logdest_name: tb_pulumi.cloudwatch.LogDestination(
+            f'{project.name_prefix}-logdest-{logdest_name}',
+            project=project,
+            **logdest_config,
+        )
+        for logdest_name, logdest_config in logdest_opts.items()
+    }
 
     s3_bucket_opts = resources.get('tb:s3:S3Bucket', {})
     s3_buckets = {
