@@ -10,6 +10,14 @@ resources:
       secret_names:
         - posthog_api_key
 
+  tb:cloudwatch:LogDestination:
+    observability:
+      log_group:
+        retention_in_days: 7
+      log_streams:
+        untagged: untagged
+      org_name: tb
+
   tb:network:MultiCidrVpc:
     fluentbit:
       # The observability project has all of 10.202.0.0/16 assigned to it, but let's not soak all
@@ -78,7 +86,7 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/dev/posthog_api_key-e3UEK4
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:fdd1b4748cfaee29553ee2c83fcaa428b68ba8e88c2791e1626e282b48127b9d
+              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:d7d656619957e4cc5df44d9b9004f63e81d3732c4bb16e10ba0297f1b58755fa
               logConfiguration:
                 logDriver: awslogs
                 options:
@@ -160,6 +168,11 @@ resources:
           service:
             desired_count: 2
           target: stalwart-metrics
+      
+      extra_policies:
+        fluentbit:
+          - arn:aws:iam::768512802988:policy/mailstrom-dev-stalwart-logs-write-access
+          - arn:aws:iam::768512802988:policy/observability-dev-observability-logs-write-access
 
       autoscalers:
         fluentbit:

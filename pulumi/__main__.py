@@ -10,6 +10,7 @@ of any of those larger infrastructure patterns.
 """
 
 import tb_pulumi
+import tb_pulumi.cloudwatch
 import tb_pulumi.fargate
 import tb_pulumi.network
 import tb_pulumi.secrets
@@ -35,6 +36,16 @@ if build_tbpulumi:
         project=project,
         **psm_opts,
     )
+
+    logdest_opts = resources.get('tb:cloudwatch:LogDestination', {})
+    logdests = {
+        logdest_name: tb_pulumi.cloudwatch.LogDestination(
+            f'{project.name_prefix}-logdest-{logdest_name}',
+            project=project,
+            **logdest_config,
+        )
+        for logdest_name, logdest_config in logdest_opts.items()
+    }
 
     vpc_config = resources.get('tb:network:MultiCidrVpc', {}).get('fluentbit', {})
     vpc_fluentbit = tb_pulumi.network.MultiCidrVpc(
