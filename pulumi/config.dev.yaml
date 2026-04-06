@@ -45,15 +45,21 @@ resources:
       cluster: {}
 
       container_security_groups:
-        fluentbit:
-          fluentbit-http:
+        fluentbit: # Service
+          fluentbit: # Load Balancer
             rules:
               ingress:
-                - description: Allow traffic from the load balancer to the container
+                # Maddeningly, apostrophes aren't allowed in descriptions
+                - description: Allow traffic from the load balancer to the containers HTTP service
                   # Sources are set in code
                   protocol: tcp
                   from_port: 1337
                   to_port: 1337
+                - description: Allow traffic from the load balancer to the containers log forwarding service
+                  # Sources are set in code
+                  protocol: tcp
+                  from_port: 24224
+                  to_port: 24224
               egress:
                 - description: Allow traffic from the container out to the Internet
                   protocol: tcp
@@ -69,7 +75,7 @@ resources:
       ssm_params: {}
 
       task_definitions:
-        fluentbit:
+        fluentbit: # Service
           container_definitions:
             - name: fluentbit
               environment:
@@ -86,7 +92,7 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/dev/posthog_api_key-e3UEK4
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:d7d656619957e4cc5df44d9b9004f63e81d3732c4bb16e10ba0297f1b58755fa
+              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:0bc8e6cdee4226f9c090ca22b08b3f6c61a5456a2090669414a43c52dd2580a8
               logConfiguration:
                 logDriver: awslogs
                 options:
@@ -107,8 +113,8 @@ resources:
             - FARGATE
 
       load_balancer_security_groups:
-        fluentbit-http:
-          description: Governs access to the fluent-bit-http load balancer in dev
+        fluentbit: # Load Balancer
+          description: Governs access to the fluentbit-http load balancer in dev
           rules:
             ingress:
               - from_port: 443
@@ -116,7 +122,13 @@ resources:
                 protocol: tcp
                 cidr_blocks:
                   - 10.2.0.0/16  # stalwart-dev
-                description: Allow access from stalwart-dev
+                description: Allow access to telemetry forwarding service from stalwart-dev
+              - from_port: 24224
+                to_port: 24224
+                protocol: tcp
+                cidr_blocks:
+                  - 10.2.0.0/16  # stalwart-dev
+                description: Allow access to log forwarding service from stalwart-dev
             egress:
               - from_port: 0
                 to_port: 65535
@@ -125,46 +137,51 @@ resources:
                   - 0.0.0.0/0
 
       load_balancers:
-        fluentbit-http:
+        fluentbit:
           enable_cross_zone_load_balancing: yes
           internal: yes
           ip_address_type: ipv4
-          load_balancer_type: application
-          name: fluentbit-http-dev
+          load_balancer_type: network
+          name: obsv-dev-fluentbit
           preserve_host_header: yes
 
       targets:
-        stalwart-metrics:
-          name: dev-telemetry-http
+        cwlogs:
+          name: obsv-dev-fluent-logs
           health_check:
-            protocol: HTTP
-            # fluentbit is set up to throw away records submitted to this endpoint
-            path: /health/check
+            port: 24224
+            protocol: TCP
+          port: 24224
+          protocol: TCP
+          target_type: ip
+          ip_address_type: ipv4
+        stalwart-metrics:
+          name: obsv-dev-fluent-telemetry
+          health_check:
             port: 1337
-            # I wish it wasn't like this. fluentbit will not accept non-POST methods, but these health checks cannot be
-            # made with custom methods. Therefore, we expect a 400 Bad Request as a sign of health. *shrug*
-            matcher: "400"
+            protocol: TCP
           port: 1337
-          protocol: HTTP
-          # Next two options are required for ECS services; ref:
-          # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/alb.html
+          protocol: TCP
           target_type: ip
           ip_address_type: ipv4
 
       listeners:
-        fluentbit-http:
-          stalwart-metrics:
+        fluentbit: # Load Balancer
+          cwlogs: # Target
+            port: 24224
+            protocol: TCP
+          stalwart-metrics: # Target
             # This cert is for fluentbit-dev.tb.pro
-            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/04dd0573-a3cc-4c19-b483-a868876c63b0
+            # certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/04dd0573-a3cc-4c19-b483-a868876c63b0
             port: 443
-            protocol: HTTPS
+            protocol: TCP
 
       services:
-        fluentbit:
+        fluentbit: # Service
           assign_public_ip: yes
-          container_name: fluentbit
+          container_name: fluentbit  # Name from container definition
           container_port: 1337
-          load_balancer: fluentbit-http
+          load_balancer: fluentbit
           service:
             desired_count: 2
           target: stalwart-metrics

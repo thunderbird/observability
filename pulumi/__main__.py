@@ -9,6 +9,7 @@ this is *not* a `tb_pulumi <https://github.com/thunderbird/pulumi>`_ project as 
 of any of those larger infrastructure patterns.
 """
 
+import pulumi_cloudflare as cloudflare
 import tb_pulumi
 import tb_pulumi.cloudwatch
 import tb_pulumi.fargate
@@ -65,3 +66,13 @@ if build_tbpulumi:
             'tb:fargate:AutoscalingFargateCluster'
         ).items()
     }
+
+    # cloudflare_zone_id = project.pulumi_config.require_secret('cloudflare_zone_id')
+    # fluent_bit_dns = cloudflare.DnsRecord(
+    #     f'{project.name_prefix}-dns-fluentbit',
+    #     name='fluent-bit' if project.stack == 'prod' else f'fluent-bit-{project.stack}',
+    #     content=ecs_clusters['fluentbit'].resources['load_balancers'],
+    #     ttl=60,
+    #     type='CNAME',
+    #     zone_id=cloudflare_zone_id,
+    # )
