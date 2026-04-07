@@ -39,7 +39,7 @@ resources:
       additional_routes:
         - destination_cidr_block: 10.2.0.0/16  # mailstrom-dev
           vpc_peering_connection_id: pcx-0d2027442f0e54ca4
-  
+
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
       cluster: {}
@@ -96,11 +96,13 @@ resources:
               logConfiguration:
                 logDriver: awslogs
                 options:
-                  awslogs-group: observability-dev-fargate-fluentbit-loggroup-fluentbit
+                  awslogs-group: /tb/dev/observability
                   awslogs-region: eu-central-1
-                  awslogs-stream-prefix: observability/dev/fluentbit/
+                  awslogs-stream-prefix: 'ecs'
               portMappings:
                 - containerPort: 1337
+                  protocol: tcp
+                - containerPort: 24224
                   protocol: tcp
               restartPolicy:
                 enabled: yes
@@ -171,10 +173,10 @@ resources:
             port: 24224
             protocol: TCP
           stalwart-metrics: # Target
-            # This cert is for fluentbit-dev.tb.pro
-            # certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/04dd0573-a3cc-4c19-b483-a868876c63b0
             port: 443
-            protocol: TCP
+            protocol: TLS
+            # This cert is for fluentbit-dev.tb.pro
+            certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/04dd0573-a3cc-4c19-b483-a868876c63b0
 
       services:
         fluentbit: # Service
@@ -184,7 +186,13 @@ resources:
           load_balancer: fluentbit
           service:
             desired_count: 2
-          target: stalwart-metrics
+          targets:
+            - container_name: fluentbit
+              container_port: 24224
+              target_name: cwlogs
+            - container_name: fluentbit
+              container_port: 1337
+              target_name: stalwart-metrics
       
       extra_policies:
         fluentbit:

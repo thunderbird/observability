@@ -9,7 +9,6 @@ this is *not* a `tb_pulumi <https://github.com/thunderbird/pulumi>`_ project as 
 of any of those larger infrastructure patterns.
 """
 
-import pulumi_cloudflare as cloudflare
 import tb_pulumi
 import tb_pulumi.cloudwatch
 import tb_pulumi.fargate
