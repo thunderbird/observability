@@ -38,7 +38,7 @@ resources:
         - secretsmanager
       additional_routes:
         - destination_cidr_block: 10.2.0.0/16  # mailstrom-dev
-          vpc_peering_connection_id: pcx-0d2027442f0e54ca4
+          vpc_peering_connection_id: pcx-04d7e54008cd9326c
 
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
@@ -196,7 +196,6 @@ resources:
       
       extra_policies:
         fluentbit:
-          - arn:aws:iam::768512802988:policy/mailstrom-dev-stalwart-logs-write-access
           - arn:aws:iam::768512802988:policy/observability-dev-observability-logs-write-access
 
       autoscalers:

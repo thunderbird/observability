@@ -9,8 +9,11 @@ this is *not* a `tb_pulumi <https://github.com/thunderbird/pulumi>`_ project as 
 of any of those larger infrastructure patterns.
 """
 
+import pulumi_aws as aws
+import pulumi_cloudflare as cloudflare
 import tb_pulumi
 import tb_pulumi.cloudwatch
+import tb_pulumi.iam
 import tb_pulumi.fargate
 import tb_pulumi.network
 import tb_pulumi.secrets
@@ -47,6 +50,24 @@ if build_tbpulumi:
         for logdest_name, logdest_config in logdest_opts.items()
     }
 
+    fluentbit_user = aws.iam.User(
+        f'{project.name_prefix}-user-fluentbit',
+        name=f'observability-{project.stack}-fluentbit',
+        tags=project.common_tags,
+    )
+
+    aws.iam.UserPolicyAttachment(
+        f'{project.name_prefix}-upa-obsv-logwrite',
+        policy_arn=logdests['observability'].resources['iam_policies']['write'],
+        user=fluentbit_user.id,
+    )
+
+    aws.iam.UserPolicyAttachment(
+        f'{project.name_prefix}-upa-mailstrom-logwrite',
+        policy_arn=f'arn:aws:iam::768512802988:policy/mailstrom-{project.stack}-stalwart-logs-write-access',
+        user=fluentbit_user.id,
+    )
+
     vpc_config = resources.get('tb:network:MultiCidrVpc', {}).get('fluentbit', {})
     vpc_fluentbit = tb_pulumi.network.MultiCidrVpc(
         f'{project.name_prefix}-vpc-fluentbit',
@@ -66,12 +87,12 @@ if build_tbpulumi:
         ).items()
     }
 
-    # cloudflare_zone_id = project.pulumi_config.require_secret('cloudflare_zone_id')
-    # fluent_bit_dns = cloudflare.DnsRecord(
-    #     f'{project.name_prefix}-dns-fluentbit',
-    #     name='fluent-bit' if project.stack == 'prod' else f'fluent-bit-{project.stack}',
-    #     content=ecs_clusters['fluentbit'].resources['load_balancers'],
-    #     ttl=60,
-    #     type='CNAME',
-    #     zone_id=cloudflare_zone_id,
-    # )
+    cloudflare_zone_id = project.pulumi_config.require_secret('cloudflare_zone_id')
+    fluent_bit_dns = cloudflare.DnsRecord(
+        f'{project.name_prefix}-dns-fluentbit',
+        name='fluentbit' if project.stack == 'prod' else f'fluentbit-{project.stack}',
+        content=ecs_clusters['fluentbit'].resources['load_balancers']['fluentbit'].dns_name,
+        ttl=60,
+        type='CNAME',
+        zone_id=cloudflare_zone_id,
+    )
