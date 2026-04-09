@@ -9,7 +9,7 @@ this is *not* a `tb_pulumi <https://github.com/thunderbird/pulumi>`_ project as 
 of any of those larger infrastructure patterns.
 """
 
-import pulumi_aws as aws
+import pulumi
 import pulumi_cloudflare as cloudflare
 import tb_pulumi
 import tb_pulumi.cloudwatch
@@ -45,28 +45,11 @@ if build_tbpulumi:
         logdest_name: tb_pulumi.cloudwatch.LogDestination(
             f'{project.name_prefix}-logdest-{logdest_name}',
             project=project,
+            app_name=logdest_name,
             **logdest_config,
         )
         for logdest_name, logdest_config in logdest_opts.items()
     }
-
-    fluentbit_user = aws.iam.User(
-        f'{project.name_prefix}-user-fluentbit',
-        name=f'observability-{project.stack}-fluentbit',
-        tags=project.common_tags,
-    )
-
-    aws.iam.UserPolicyAttachment(
-        f'{project.name_prefix}-upa-obsv-logwrite',
-        policy_arn=logdests['observability'].resources['iam_policies']['write'],
-        user=fluentbit_user.id,
-    )
-
-    aws.iam.UserPolicyAttachment(
-        f'{project.name_prefix}-upa-mailstrom-logwrite',
-        policy_arn=f'arn:aws:iam::768512802988:policy/mailstrom-{project.stack}-stalwart-logs-write-access',
-        user=fluentbit_user.id,
-    )
 
     vpc_config = resources.get('tb:network:MultiCidrVpc', {}).get('fluentbit', {})
     vpc_fluentbit = tb_pulumi.network.MultiCidrVpc(
@@ -81,6 +64,7 @@ if build_tbpulumi:
             project=project,
             subnets=vpc_fluentbit.resources.get('subnets', []),
             **cluster_config,
+            opts=pulumi.ResourceOptions(depends_on=[vpc_fluentbit]),
         )
         for cluster_name, cluster_config in resources.get(
             'tb:fargate:AutoscalingFargateCluster'
@@ -95,4 +79,5 @@ if build_tbpulumi:
         ttl=60,
         type='CNAME',
         zone_id=cloudflare_zone_id,
+        opts=pulumi.ResourceOptions(depends_on=[*ecs_clusters.values()]),
     )

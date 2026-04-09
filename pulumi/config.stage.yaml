@@ -10,6 +10,14 @@ resources:
       secret_names:
         - posthog_api_key
 
+  tb:cloudwatch:LogDestination:
+    observability:
+      log_group:
+        retention_in_days: 7
+      log_streams:
+        untagged: untagged
+      org_name: tb
+
   tb:network:MultiCidrVpc:
     fluentbit:
       # The observability project has all of 10.201.0.0/16 assigned to it, but let's not soak all
