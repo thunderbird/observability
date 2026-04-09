@@ -19,11 +19,6 @@ pipeline:
       port: 1337
       threaded: true
     
-    # Log shippers should override the tag with the name of the application
-    - name: forward
-      tag: cloudwatch.untagged
-      port: 24224
-
   filters:
     # Run a Lua script that breaks all events in a single Stalwart telemetry payload into multiple
     # records. The tag "telemetry_stalwart" here is the result of POSTing to the http input at the
@@ -50,26 +45,3 @@ pipeline:
       tls: on
       uri: /batch
       format: json_lines
-
-    # Send logs onward to CloudWatch. Log groups by the derived name must pre-exist, and this
-    # service must have sufficient IAM permissions to create log streams and post events to them.
-    - name: cloudwatch_logs
-      match: cloudwatch.stalwart.mail
-      log_group_name: /tb/${ENV}/stalwart
-      log_stream_name: mail
-      region: eu-central-1
-      # log_key: systemd message field?
-
-    - name: cloudwatch_logs
-      match: cloudwatch.stalwart.api
-      log_group_name: /tb/${ENV}/stalwart
-      log_stream_name: api
-      region: eu-central-1
-      # log_key: systemd message field?
-    
-    - name: cloudwatch_logs
-      match: cloudwatch.untagged
-      log_group_name: /tb/${ENV}/observability
-      log_stream_name: untagged
-      region: eu-central-1
-      # log_key: systemd message field?
