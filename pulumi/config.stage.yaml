@@ -92,9 +92,9 @@ resources:
               logConfiguration:
                 logDriver: awslogs
                 options:
-                  awslogs-group: observability-stage-fargate-fluentbit-loggroup-fluentbit
+                  awslogs-group: /tb/stage/observability
                   awslogs-region: eu-central-1
-                  awslogs-stream-prefix: observability/stage/fluentbit/
+                  awslogs-stream-prefix: 'ecs'
               portMappings:
                 - containerPort: 1337
                   hostPort: 1337
@@ -170,7 +170,10 @@ resources:
           load_balancer: fluentbit-http
           service:
             desired_count: 2
-          target: stalwart-metrics
+          targets:
+            - container_name: fluentbit
+              container_port: 1337
+              target_name: stalwart-metrics
 
       autoscalers:
         fluentbit:

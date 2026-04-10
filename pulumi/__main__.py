@@ -75,7 +75,7 @@ if build_tbpulumi:
     fluent_bit_dns = cloudflare.DnsRecord(
         f'{project.name_prefix}-dns-fluentbit',
         name='fluentbit' if project.stack == 'prod' else f'fluentbit-{project.stack}',
-        content=ecs_clusters['fluentbit'].resources['load_balancers']['fluentbit'].dns_name,
+        content=ecs_clusters['fluentbit'].resources['load_balancers']['fluentbit-http'].dns_name,
         ttl=60,
         type='CNAME',
         zone_id=cloudflare_zone_id,
