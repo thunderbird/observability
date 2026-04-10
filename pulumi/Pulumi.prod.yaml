@@ -201,6 +201,10 @@ config:
       selection_type: all_monitors
       statusiq_role: super_admin
       user_role: super_admin
+  observability:cloudflare_zone_id:
+    secure: AAABAFkTz7RxaV86Kw6RQ+XJ9O1orS7QTUgkRDIwvoE4kXYdQGWJ2i6zj9XqLoevXb3PgOGnNmv550aMA/H+zA==
+  cloudflare:apiToken:
+    secure: AAABAJ/XXYzFsIlhvWdl0FwFnUWHUTKIyJMAFNicpTtxUlWcOurQC9Y1O5qu+hjL/DmMRoV2c0+KdBy00YUzvIWf0HWuyIZk
 
 # The "api" kind seems to have some bugs in the Terraform provider, but this is what such a
 # configuration should look like:
