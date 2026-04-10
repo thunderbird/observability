@@ -108,7 +108,7 @@ resources:
 
       load_balancer_security_groups:
         fluentbit-http: # Load Balancer
-          description: Governs access to the fluentbit-http load balancer in dev
+          description: Governs access to the fluent-bit-http load balancer in dev
           rules:
             ingress:
               - from_port: 443
@@ -116,7 +116,7 @@ resources:
                 protocol: tcp
                 cidr_blocks:
                   - 10.2.0.0/16  # stalwart-dev
-                description: Allow access to telemetry forwarding service from stalwart-dev
+                description: Allow access from stalwart-dev
             egress:
               - from_port: 0
                 to_port: 65535
@@ -137,10 +137,12 @@ resources:
         stalwart-metrics:
           name: dev-telemetry-http
           health_check:
+            protocol: HTTP
+            path: /health/check
             port: 1337
-            protocol: TCP
+            matcher: "400"
           port: 1337
-          protocol: TCP
+          protocol: HTTP
           target_type: ip
           ip_address_type: ipv4
 
