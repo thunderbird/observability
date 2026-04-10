@@ -1,5 +1,7 @@
 ---
 
+.fluentbit_image: &FLUENTBIT_IMAGE 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:426154b20a1b0d005f9f6029836a5902e5b5b228edd9688686f10d373e72a5b2
+
 config:
   build_site24x7: False
   build_tbpulumi: True
@@ -9,6 +11,14 @@ resources:
     secrets:
       secret_names:
         - posthog_api_key
+
+  tb:cloudwatch:LogDestination:
+    observability:
+      log_group:
+        retention_in_days: 7
+      log_streams:
+        untagged: untagged
+      org_name: tb
 
   tb:network:MultiCidrVpc:
     fluentbit:
@@ -78,13 +88,13 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/stage/posthog_api_key-3xsHYd
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:fdd1b4748cfaee29553ee2c83fcaa428b68ba8e88c2791e1626e282b48127b9d
+              image: *FLUENTBIT_IMAGE
               logConfiguration:
                 logDriver: awslogs
                 options:
-                  awslogs-group: observability-stage-fargate-fluentbit-loggroup-fluentbit
+                  awslogs-group: /tb/stage/observability
                   awslogs-region: eu-central-1
-                  awslogs-stream-prefix: observability/stage/fluentbit/
+                  awslogs-stream-prefix: 'ecs'
               portMappings:
                 - containerPort: 1337
                   hostPort: 1337
@@ -160,7 +170,10 @@ resources:
           load_balancer: fluentbit-http
           service:
             desired_count: 2
-          target: stalwart-metrics
+          targets:
+            - container_name: fluentbit
+              container_port: 1337
+              target_name: stalwart-metrics
 
       autoscalers:
         fluentbit:

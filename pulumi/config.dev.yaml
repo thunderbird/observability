@@ -1,5 +1,7 @@
 ---
 
+.fluentbit_image: &FLUENTBIT_IMAGE 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:426154b20a1b0d005f9f6029836a5902e5b5b228edd9688686f10d373e72a5b2
+
 config:
   build_site24x7: False
   build_tbpulumi: True
@@ -9,6 +11,14 @@ resources:
     secrets:
       secret_names:
         - posthog_api_key
+
+  tb:cloudwatch:LogDestination:
+    observability:
+      log_group:
+        retention_in_days: 7
+      log_streams:
+        untagged: untagged
+      org_name: tb
 
   tb:network:MultiCidrVpc:
     fluentbit:
@@ -30,15 +40,15 @@ resources:
         - secretsmanager
       additional_routes:
         - destination_cidr_block: 10.2.0.0/16  # mailstrom-dev
-          vpc_peering_connection_id: pcx-0d2027442f0e54ca4
-  
+          vpc_peering_connection_id: pcx-04d7e54008cd9326c
+
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
       cluster: {}
 
       container_security_groups:
-        fluentbit:
-          fluentbit-http:
+        fluentbit: # Service
+          fluentbit-http: # Load Balancer
             rules:
               ingress:
                 - description: Allow traffic from the load balancer to the container
@@ -61,7 +71,7 @@ resources:
       ssm_params: {}
 
       task_definitions:
-        fluentbit:
+        fluentbit: # Service
           container_definitions:
             - name: fluentbit
               environment:
@@ -78,13 +88,13 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/dev/posthog_api_key-e3UEK4
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:fdd1b4748cfaee29553ee2c83fcaa428b68ba8e88c2791e1626e282b48127b9d
+              image: *FLUENTBIT_IMAGE
               logConfiguration:
                 logDriver: awslogs
                 options:
-                  awslogs-group: observability-dev-fargate-fluentbit-loggroup-fluentbit
+                  awslogs-group: /tb/dev/observability
                   awslogs-region: eu-central-1
-                  awslogs-stream-prefix: observability/dev/fluentbit/
+                  awslogs-stream-prefix: 'ecs'
               portMappings:
                 - containerPort: 1337
                   protocol: tcp
@@ -99,7 +109,7 @@ resources:
             - FARGATE
 
       load_balancer_security_groups:
-        fluentbit-http:
+        fluentbit-http: # Load Balancer
           description: Governs access to the fluent-bit-http load balancer in dev
           rules:
             ingress:
@@ -144,24 +154,31 @@ resources:
           ip_address_type: ipv4
 
       listeners:
-        fluentbit-http:
-          stalwart-metrics:
+        fluentbit-http: # Load Balancer
+          stalwart-metrics: # Target
             # This cert is for fluentbit-dev.tb.pro
             certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/04dd0573-a3cc-4c19-b483-a868876c63b0
             port: 443
             protocol: HTTPS
 
       services:
-        fluentbit:
+        fluentbit: # Service
           assign_public_ip: yes
-          container_name: fluentbit
+          container_name: fluentbit  # Name from container definition
           container_port: 1337
           load_balancer: fluentbit-http
           service:
             desired_count: 2
-          target: stalwart-metrics
+          targets:
+            - container_name: fluentbit
+              container_port: 1337
+              target_name: stalwart-metrics
+      
+      extra_policies:
+        fluentbit:
+          - arn:aws:iam::768512802988:policy/observability-dev-observability-logs-write-access
 
       autoscalers:
         fluentbit:
-          min_capacity: 2
-          max_capacity: 4
+          min_capacity: 1
+          max_capacity: 1

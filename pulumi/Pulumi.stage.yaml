@@ -1,3 +1,7 @@
-config: 
+config:
   observability:posthog_api_key:
     secure: AAABADNVbsoTmx0hogPjFb+Egd5TX7Wheactt3JgEv21j1G+OJSjHF+CUpY/w9qTS3KEw4IdoYUuufBKX2sJXudMUYFAEc8m8o2rg56eGw==
+  observability:cloudflare_zone_id:
+    secure: AAABALYXXhMfqqRW1FbwgqDZIsD7VwJ+AGDcqv4RiMDfi7cadVqba5L1esVND3ieXJdpE/qwcnN1AIUfBe6Zpw==
+  cloudflare:apiToken:
+    secure: AAABAB5n/gkdIZz7ZKyeu00kWDwDrpPr0Wl/FD449u+/WrX88r8nk+FHj/GTjyQL/GURB9TrMRzJ2as9ceKoWfOO6Z4+24Yk
