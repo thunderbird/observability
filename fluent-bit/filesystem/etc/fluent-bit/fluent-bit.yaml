@@ -18,7 +18,7 @@ pipeline:
       tag: untagged
       port: 1337
       threaded: true
-    
+
   filters:
     # Run a Lua script that breaks all events in a single Stalwart telemetry payload into multiple
     # records. The tag "telemetry_stalwart" here is the result of POSTing to the http input at the
