@@ -1,5 +1,7 @@
 ---
 
+.fluentbit_image: &FLUENTBIT_IMAGE 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:426154b20a1b0d005f9f6029836a5902e5b5b228edd9688686f10d373e72a5b2
+
 config:
   build_site24x7: True
   build_tbpulumi: True
@@ -87,7 +89,7 @@ resources:
               secrets:
                 - name: POSTHOG_API_KEY
                   valueFrom: arn:aws:secretsmanager:eu-central-1:768512802988:secret:observability/prod/posthog_api_key-pVtqmp
-              image: 768512802988.dkr.ecr.eu-central-1.amazonaws.com/thunderbird/fluent-bit:aa968a499d7e
+              image: *FLUENTBIT_IMAGE
               logConfiguration:
                 logDriver: awslogs
                 options:
