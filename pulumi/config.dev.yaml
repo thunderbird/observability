@@ -55,11 +55,6 @@ resources:
                   protocol: tcp
                   from_port: 1337
                   to_port: 1337
-                - description: Allow traffic from the load balancer to the containers log forwarding service
-                  # Sources are set in code
-                  protocol: tcp
-                  from_port: 24224
-                  to_port: 24224
               egress:
                 - description: Allow traffic from the container out to the Internet
                   protocol: tcp
@@ -102,8 +97,6 @@ resources:
               portMappings:
                 - containerPort: 1337
                   protocol: tcp
-                - containerPort: 24224
-                  protocol: tcp
               restartPolicy:
                 enabled: yes
                 restartAttemptPeriod: 300
@@ -125,12 +118,6 @@ resources:
                 cidr_blocks:
                   - 10.2.0.0/16  # stalwart-dev
                 description: Allow access to telemetry forwarding service from stalwart-dev
-              - from_port: 24224
-                to_port: 24224
-                protocol: tcp
-                cidr_blocks:
-                  - 10.2.0.0/16  # stalwart-dev
-                description: Allow access to log forwarding service from stalwart-dev
             egress:
               - from_port: 0
                 to_port: 65535
@@ -143,20 +130,11 @@ resources:
           enable_cross_zone_load_balancing: yes
           internal: yes
           ip_address_type: ipv4
-          load_balancer_type: network
-          name: obsv-dev-fluentbit
+          load_balancer_type: application
+          name: fluentbit-http-dev
           preserve_host_header: yes
 
       targets:
-        cwlogs:
-          name: obsv-dev-fluent-logs
-          health_check:
-            port: 24224
-            protocol: TCP
-          port: 24224
-          protocol: TCP
-          target_type: ip
-          ip_address_type: ipv4
         stalwart-metrics:
           name: obsv-dev-fluent-telemetry
           health_check:
@@ -169,9 +147,6 @@ resources:
 
       listeners:
         fluentbit: # Load Balancer
-          cwlogs: # Target
-            port: 24224
-            protocol: TCP
           stalwart-metrics: # Target
             port: 443
             protocol: TLS
@@ -188,9 +163,6 @@ resources:
             desired_count: 2
           targets:
             - container_name: fluentbit
-              container_port: 24224
-              target_name: cwlogs
-            - container_name: fluentbit
               container_port: 1337
               target_name: stalwart-metrics
       
@@ -200,5 +172,5 @@ resources:
 
       autoscalers:
         fluentbit:
-          min_capacity: 2
-          max_capacity: 4
+          min_capacity: 1
+          max_capacity: 1
