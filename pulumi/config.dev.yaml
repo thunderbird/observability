@@ -46,11 +46,10 @@ resources:
 
       container_security_groups:
         fluentbit: # Service
-          fluentbit: # Load Balancer
+          fluentbit-http: # Load Balancer
             rules:
               ingress:
-                # Maddeningly, apostrophes aren't allowed in descriptions
-                - description: Allow traffic from the load balancer to the containers HTTP service
+                - description: Allow traffic from the load balancer to the container
                   # Sources are set in code
                   protocol: tcp
                   from_port: 1337
@@ -108,7 +107,7 @@ resources:
             - FARGATE
 
       load_balancer_security_groups:
-        fluentbit: # Load Balancer
+        fluentbit-http: # Load Balancer
           description: Governs access to the fluentbit-http load balancer in dev
           rules:
             ingress:
@@ -126,7 +125,7 @@ resources:
                   - 0.0.0.0/0
 
       load_balancers:
-        fluentbit:
+        fluentbit-http:
           enable_cross_zone_load_balancing: yes
           internal: yes
           ip_address_type: ipv4
@@ -136,7 +135,7 @@ resources:
 
       targets:
         stalwart-metrics:
-          name: obsv-dev-fluent-telemetry
+          name: dev-telemetry-http
           health_check:
             port: 1337
             protocol: TCP
@@ -146,19 +145,19 @@ resources:
           ip_address_type: ipv4
 
       listeners:
-        fluentbit: # Load Balancer
+        fluentbit-http: # Load Balancer
           stalwart-metrics: # Target
-            port: 443
-            protocol: TLS
             # This cert is for fluentbit-dev.tb.pro
             certificate_arn: arn:aws:acm:eu-central-1:768512802988:certificate/04dd0573-a3cc-4c19-b483-a868876c63b0
+            port: 443
+            protocol: HTTPS
 
       services:
         fluentbit: # Service
           assign_public_ip: yes
           container_name: fluentbit  # Name from container definition
           container_port: 1337
-          load_balancer: fluentbit
+          load_balancer: fluentbit-http
           service:
             desired_count: 2
           targets:
