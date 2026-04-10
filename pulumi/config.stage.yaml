@@ -41,6 +41,9 @@ resources:
       additional_routes:
         - destination_cidr_block: 10.1.0.0/16  # mailstrom-stage
           vpc_peering_connection_id: pcx-03dd1daa0b700ab37
+        # TODO: Add route for accounts-stage VPC peering once the peering connection is created
+        # - destination_cidr_block: 10.11.0.0/16  # accounts-stage
+        #   vpc_peering_connection_id: pcx-PLACEHOLDER
   
   tb:fargate:AutoscalingFargateCluster:
     fluentbit:
@@ -120,6 +123,12 @@ resources:
                 cidr_blocks:
                   - 10.1.0.0/16  # stalwart-stage
                 description: Allow access from stalwart-stage
+              - from_port: 443
+                to_port: 443
+                protocol: tcp
+                cidr_blocks:
+                  - 10.11.0.0/16  # accounts-stage
+                description: Allow access from accounts-stage
             egress:
               - from_port: 0
                 to_port: 65535

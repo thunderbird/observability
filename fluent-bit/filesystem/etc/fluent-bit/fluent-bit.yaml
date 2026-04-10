@@ -27,6 +27,13 @@ pipeline:
       match: telemetry_stalwart
       script: /etc/fluent-bit/lua/stalwart_telemetry_events.lua
       call: stalwart_telemetry_callback
+
+    # Run a Lua script that processes Keycloak account events (logins, token introspections, etc.)
+    # polled by the Accounts Celery worker and POSTed to `/telemetry/keycloak`.
+    - name: lua
+      match: telemetry_keycloak
+      script: /etc/fluent-bit/lua/keycloak_account_events.lua
+      call: keycloak_account_callback
     
   outputs:
     # Throw away health checks
@@ -40,6 +47,15 @@ pipeline:
     # Send Stalwart telemetry to Posthog
     - name: http
       match: telemetry_stalwart
+      host: us.i.posthog.com
+      port: 443
+      tls: on
+      uri: /batch
+      format: json_lines
+
+    # Send Keycloak account events to Posthog
+    - name: http
+      match: telemetry_keycloak
       host: us.i.posthog.com
       port: 443
       tls: on
